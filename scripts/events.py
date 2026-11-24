@@ -376,7 +376,70 @@ def watch_news(watch, now, hours=72, per=6):
         except Exception as e:
             log(f"  {t} 下次财报日期: {e}")
         out[t] = {"name": name, "move": mv.get(t), "lastEarn": last, "nextEarn": nxt, "items": pick, "found": len(items)}
+    translate_titles([it for n in out.values() for it in n["items"]])
     return out
+
+
+# ---------------------------------------------------------------- headline translation
+# 用 Google 翻译的公开网页接口（免费、无需密钥，非官方，可能偶尔失败）；失败时网页显示英文原文。
+# 已翻译过的标题存在 data/translate_cache.json，避免重复请求。
+from pathlib import Path as _P
+
+_TC_FILE = _P(__file__).resolve().parent.parent / "data" / "translate_cache.json"
+_TC = None
+
+
+def _tc():
+    global _TC
+    if _TC is None:
+        try:
+            _TC = json.loads(_TC_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            _TC = {}
+    return _TC
+
+
+def to_zh(text):
+    if not text:
+        return None
+    c = _tc()
+    if text in c:
+        return c[text]
+    try:
+        r = http().get("https://translate.googleapis.com/translate_a/single",
+                       params={"client": "gtx", "sl": "en", "tl": "zh-CN", "dt": "t", "q": text}, timeout=15)
+        if r.status_code != 200:
+            raise RuntimeError(f"HTTP {r.status_code}")
+        zh = "".join(seg[0] for seg in r.json()[0] if seg and seg[0]).strip()
+        if zh:
+            c[text] = zh
+        time.sleep(0.15)
+        return zh or None
+    except Exception as e:
+        log(f"  翻译失败：{e}")
+        return None
+
+
+def save_translations(keep=800):
+    c = _tc()
+    if not c:
+        return
+    items = list(c.items())[-keep:]
+    _TC_FILE.write_text(json.dumps(dict(items), ensure_ascii=False, indent=0), encoding="utf-8")
+
+
+def translate_titles(objs):
+    """给带 title 的新闻对象加 title_zh。连续失败 3 次就停止，免得拖慢整个任务。"""
+    fails = 0
+    for o in objs:
+        if fails >= 3:
+            break
+        zh = to_zh(o.get("title"))
+        if zh:
+            o["title_zh"] = zh
+        else:
+            fails += 1
+    save_translations()
 
 
 # ---------------------------------------------------------------- main entry
@@ -445,6 +508,7 @@ def collect(now, mode, session, horizon, watch):
         news.append({"kind": "news", "t": t, "chg": None if m.get("chg") is None else round(m["chg"], 2),
                      "ah": None if m.get("ah") is None else round(m["ah"], 2), **({"headline": h} if h else {})})
     sources["news"] = "Nasdaq quotes + Yahoo Finance RSS"
+    translate_titles([n["headline"] for n in news if n.get("headline")])
     for e in pick:
         e.pop("tier", None)
     return {"items": pick + earn + news, "sources": sources, "notes": notes, "days": days}

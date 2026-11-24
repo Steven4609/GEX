@@ -97,7 +97,7 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:28px;backgroun
 .news .nm{font-size:12px;color:var(--mu);margin-left:8px}.news .mv{font-size:12px;white-space:nowrap}
 .nw{display:block;text-decoration:none;color:inherit;margin:8px -6px 0;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.28);border:1px solid var(--rim2);transition:background .15s}
 .nw:hover{background:rgba(255,255,255,.5)}@media (prefers-color-scheme:dark){.nw{background:rgba(255,255,255,.04)}.nw:hover{background:rgba(255,255,255,.1)}}
-.nt{font-size:13.5px;line-height:1.45;font-weight:500}.nmeta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:11.5px;color:var(--mu);margin-top:5px}
+.nt{font-size:13.5px;line-height:1.45;font-weight:500}.norig{font-size:11.5px;color:var(--mu);line-height:1.4;margin-top:3px}.nmeta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:11.5px;color:var(--mu);margin-top:5px}
 .chip{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;color:var(--cc);background:color-mix(in srgb,var(--cc) 14%,transparent);border:1px solid color-mix(in srgb,var(--cc) 30%,transparent)}
 .ft{font-size:11px;color:var(--mu);margin:18px 8px 0;line-height:1.65}
 details{margin-top:10px}summary{cursor:pointer;font-size:12px;color:var(--ac);font-weight:500}
@@ -185,7 +185,7 @@ const S = {
     newsSec: '自选股要闻（近 3 天）', newsNone: '近 3 天主要财经媒体没有相关报道', newsPending: '下次更新时会抓取自选股新闻', dayMv: c => `今日 ${sp(c)}%`, ahMv: c => `盘后 ${sp(c)}%`,
     nextEarn: d => `下次财报 ${d}`, lastEarn: (d, e, c, x) => `上次财报 ${d}：EPS ${e}（预期 ${c}${x != null && x !== '' ? '，' + (+x >= 0 ? '超预期 ' : '低于预期 ') + Math.abs(+x) + '%' : ''}）`,
     tagN: {earnings: '业绩', analyst: '评级', deal: '并购/合作', legal: '监管/诉讼', people: '人事', policy: '政策', capital: '股本/回购', product: '产品'},
-    newsSrc: '标题来自 CNBC、Bloomberg、Reuters、WSJ、MarketWatch、Barron’s、FT、Yahoo Finance 等（经 Google News 和 Yahoo Finance RSS），只取标题和链接，原文请点开阅读。标签按标题关键词自动标注，有标签的优先列出，不代表重要性判断。',
+    newsSrc: '标题来自 CNBC、Bloomberg、Reuters、WSJ、MarketWatch、Barron’s、FT、Yahoo Finance 等（经 Google News 和 Yahoo Finance RSS），只取标题和链接，原文请点开阅读。中文标题为机器翻译（Google 翻译），下方灰字是英文原标题。标签按标题关键词自动标注，有标签的优先列出，不代表重要性判断。',
     watchFoot: '期权数据：CBOE 延迟行情。不构成投资建议。',
     core: 'SPY / QQQ', watch: '自选股', watchHead: n => n ? `自选股 · ${n} 只` : '自选股', watchEmpty: '还没有自选股。在上面的框里填代码（如 NVDA, TSLA），再点“更新”。', events: '事件', noEvents: '没有符合条件的事件',
     notes: '提示', srcLine: (s, ts) => `数据：${s}（${ts}）`, srcName: {cboe: 'CBOE 延迟行情', yahoo: 'Yahoo Finance（备用源，gamma 由 BS 重算）'},
@@ -367,7 +367,7 @@ function eventsList(r) {
     const when = e.date ? md(e.date) + (e.time ? ' ' + e.time : '') : '';
     if (e.kind === 'econ' || e.kind === 'fed') out.push(`${esc(when)}${LANG === 'zh' ? '：' : ': '}${esc(t.econ(econName(e.name), e.actual, e.consensus, e.previous))}`);
     else if (e.kind === 'earn') out.push(`${esc(md(e.date))}${LANG === 'zh' ? '：' : ': '}${esc(t.earn(e.t, e.when, e.eps, e.epsForecast, e.surprise))}`);
-    else if (e.kind === 'news') out.push(`${esc(t.news(e.t, e.chg, e.ah))}${LANG === 'zh' ? '：' : ': '}${e.headline ? `<a href="${esc(e.headline.link)}" target="_blank" rel="noopener">${esc(e.headline.title)}</a> <span style="color:var(--mu)">(${esc(e.headline.src)}, ${esc(e.headline.pub)} ET)</span>` : esc(t.noHead)}`);
+    else if (e.kind === 'news') out.push(`${esc(t.news(e.t, e.chg, e.ah))}${LANG === 'zh' ? '：' : ': '}${e.headline ? `<a href="${esc(e.headline.link)}" target="_blank" rel="noopener">${esc(LANG === 'zh' && e.headline.title_zh ? e.headline.title_zh : e.headline.title)}</a> <span style="color:var(--mu)">(${esc(e.headline.src)}, ${esc(e.headline.pub)} ET)</span>` : esc(t.noHead)}`);
   }
   const cn = (r.calNote || []).map(c => c.kind === 'holiday' ? t.holiday(md(c.date)) : t.early(md(c.date), c.close));
   if (cn.length) out.push(esc(t.calNote + cn.join(LANG === 'zh' ? '、' : ', ')));
@@ -412,7 +412,7 @@ function newsHtml(r) {
     h += `<div class="c glass news"><div class="top"><div><span class="px" style="font-size:19px">${esc(a.t)}</span>${n.name ? `<span class="nm">${esc(n.name)}</span>` : ''}</div><div class="mv">${meta}</div></div>`;
     if (earn) h += `<div class="sub">${earn}</div>`;
     if (!n.items.length) h += `<div class="sub">${t.newsNone}</div>`;
-    for (const it of n.items) h += `<a class="nw" href="${esc(it.link)}" target="_blank" rel="noopener"><div class="nt">${esc(it.title)}</div><div class="nmeta">${(it.tags || []).map(g => `<span class="chip" style="--cc:${TAGC[g] || '#888'}">${esc(t.tagN[g] || g)}</span>`).join('')}<span>${esc(it.source || '')} · ${esc(it.pub)} ET</span></div></a>`;
+    for (const it of n.items) h += `<a class="nw" href="${esc(it.link)}" target="_blank" rel="noopener"><div class="nt">${esc(LANG === 'zh' && it.title_zh ? it.title_zh : it.title)}</div>${LANG === 'zh' && it.title_zh ? `<div class="norig">${esc(it.title)}</div>` : ''}<div class="nmeta">${(it.tags || []).map(g => `<span class="chip" style="--cc:${TAGC[g] || '#888'}">${esc(t.tagN[g] || g)}</span>`).join('')}<span>${esc(it.source || '')} · ${esc(it.pub)} ET</span></div></a>`;
     h += '</div>';
   }
   return h + `</div><div class="src" style="margin:8px 8px 0">${esc(t.newsSrc)}</div>`;
