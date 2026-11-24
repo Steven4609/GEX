@@ -17,6 +17,7 @@ const [hy, hm, hd] = ymd(RUN.horizon);
 const horYY = String(hy).slice(2) + String(hm).padStart(2, '0') + String(hd).padStart(2, '0');
 const today = `${E.y}-${String(E.m).padStart(2, '0')}-${String(E.d).padStart(2, '0')}`;
 const [cH, cM] = RUN.close.split(':').map(Number), closeMin = cH * 60 + cM, lastMin = `${String(Math.floor((closeMin - 1) / 60)).padStart(2, '0')}:${String((closeMin - 1) % 60).padStart(2, '0')}`;
+const sessDay = RUN.session || today; // 数据对应的交易日（周末 / 假日手动运行时是上一个交易日）
 const r = 0.04;
 const ORDER = ['brokenPut', 'brokenCall', 'putWall', 'callWall', 'zero', 'maxNeg', 'neg', 'pos'];
 const PRIMARY = ['putWall', 'callWall', 'zero', 'brokenPut', 'brokenCall'];
@@ -94,7 +95,7 @@ function analyze(T) {
   }
   lv.sort((a, b) => (a.dir === b.dir ? (a.dir === 'up' ? a.K - b.K : b.K - a.K) : (a.dir === 'up' ? -1 : 1)));
   const Sref = RUN.mode === 'pre' ? d.close : (d.prev_day_close || d.close);
-  const etfPx = (e, lev) => { if (!e) return null; const ltt = String(e.last_trade_time || ''); const traded = ltt.slice(0, 10) === today; if (RUN.mode === 'post' && traded && ltt.slice(11, 16) >= lastMin && e.close > 0) return e.close; const p0 = traded ? (e.prev_day_close || e.close) : e.close; return p0 ? p0 * (1 + lev * (S / Sref - 1)) : null; };
+  const etfPx = (e, lev) => { if (!e) return null; const ltt = String(e.last_trade_time || ''); const traded = ltt.slice(0, 10) === sessDay; if (RUN.mode === 'post' && traded && ltt.slice(11, 16) >= lastMin && e.close > 0) return e.close; const p0 = traded ? (e.prev_day_close || e.close) : e.close; return p0 ? p0 * (1 + lev * (S / Sref - 1)) : null; };
   const pB = bull ? etfPx(etf && etf.bull, 3) : null, pR = bear ? etfPx(etf && etf.bear, -3) : null;
   let crossedDn = [], crossedUp = [];
   if (RUN.mode !== 'pre' && d.high > d.low) {

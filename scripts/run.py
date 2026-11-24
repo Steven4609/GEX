@@ -56,8 +56,8 @@ def decide(now: pd.Timestamp, scheduled: bool):
         if scheduled:
             return {**out, "action": "skip", "reason": "休市"}
         # manual run on a non-trading day: treat as after the last session's close
-        last = cal.previous_session(d)
-        out.update(action="run", mode="post", horizon=cal.next_session(d).strftime("%Y-%m-%d"), session=last.strftime("%Y-%m-%d"))
+        last = cal.date_to_session(d, direction="previous")
+        out.update(action="run", mode="post", horizon=cal.date_to_session(d, direction="next").strftime("%Y-%m-%d"), session=last.strftime("%Y-%m-%d"))
         close = cal.session_close(last).tz_convert(ET)
     else:
         close = cal.session_close(d).tz_convert(ET)
@@ -438,7 +438,7 @@ def main():
         except Exception:
             prev = None
 
-    run = {"mode": dec["mode"], "horizon": dec["horizon"], "close": dec["close"], "hzLen": dec["hz_len"],
+    run = {"mode": dec["mode"], "horizon": dec["horizon"], "close": dec["close"], "hzLen": dec["hz_len"], "session": dec["session"],
            "now": {"y": now.year, "m": now.month, "d": now.day, "H": now.hour, "M": now.minute}}
     p = subprocess.run(["node", str(ROOT / "scripts" / "compute.mjs")], input=json.dumps({"run": run, "tickers": tickers}),
                        capture_output=True, text=True, timeout=600)
