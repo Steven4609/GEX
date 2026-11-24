@@ -1,0 +1,5 @@
+pandas
+exchange_calendars
+yfinance
+curl_cffi
+requests
