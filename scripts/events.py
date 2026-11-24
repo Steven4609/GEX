@@ -60,12 +60,13 @@ NASDAQ_H = {"Origin": "https://www.nasdaq.com", "Referer": "https://www.nasdaq.c
 # ---------------------------------------------------------------- economic data & Fed
 # tier 1 = market movers, tier 2 = worth a line; anything else is ignored
 ECON = [
+    (None, r"Composite PMI|GDP Sales|PCE Prices|GDP Deflator|Real Consumer Spending"),
     (2, r"GDP Price Index"),
     (1, r"^(Core )?CPI|Consumer Price Index"), (1, r"^(Core )?PPI|Producer Price Index"), (1, r"Nonfarm Payrolls|Non-Farm Payrolls"),
     (1, r"^Unemployment Rate"), (1, r"^(Core )?PCE|PCE Price"), (1, r"^GDP|Gross Domestic Product|Prelim GDP|Advance GDP"),
     (1, r"Interest Rate Decision|Fed Interest Rate|Federal Funds Rate"), (1, r"FOMC (Meeting )?Minutes"), (1, r"FOMC Statement|FOMC Press Conference"),
     (2, r"^Initial Jobless Claims|^Unemployment Claims"), (2, r"^(Core )?Retail Sales"), (2, r"ISM (Manufacturing|Non-Manufacturing|Services) PMI$"),
-    (None, r"Composite PMI"), (2, r"S&P Global (Manufacturing|Services) PMI|Flash (Manufacturing|Services) PMI"), (2, r"^Housing Starts|^Building Permits"), (2, r"CB Consumer Confidence|^Consumer Confidence"),
+    (2, r"S&P Global (Manufacturing|Services) PMI|Flash (Manufacturing|Services) PMI"), (2, r"^Housing Starts|^Building Permits"), (2, r"CB Consumer Confidence|^Consumer Confidence"),
     (2, r"Michigan Consumer Sentiment|UoM Consumer Sentiment|Prelim UoM"), (2, r"JOLTS"), (2, r"^(Core )?Durable Goods Orders"),
     (2, r"Average Hourly Earnings"), (2, r"ADP Nonfarm|ADP Non-Farm"), (2, r"Beige Book"), (2, r"Philadelphia Fed Manufacturing Index"),
     (2, r"New Home Sales|Existing Home Sales"), (2, r"Industrial Production"),
@@ -297,7 +298,7 @@ def collect(now, mode, session, horizon, watch):
             sources["econ"] = "ForexFactory"
     if mode == "post":  # today's data is already in the price; keep only the next session's
         econ = [e for e in econ if e["date"] != session]
-    # dedupe (Nasdaq lists m/m and y/y separately with the same name), keep tier order, max 4, then sort by time
+    # dedupe (Nasdaq lists m/m and y/y separately with the same name), keep tier order (today first within a tier), max 5, then sort by time
     seen, pick = set(), []
     for e in sorted(econ, key=lambda e: (e["tier"], e["date"], e["time"] or "")):
         key = (e["date"], e["name"])
@@ -305,7 +306,7 @@ def collect(now, mode, session, horizon, watch):
             continue
         seen.add(key)
         pick.append(e)
-    pick = sorted(pick[:4], key=lambda e: (e["date"], e["time"] or ""))
+    pick = sorted(pick[:5], key=lambda e: (e["date"], e["time"] or ""))
 
     earn = []
     for day in days:
