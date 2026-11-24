@@ -436,9 +436,12 @@ function render() {
   $('main').innerHTML = h;
 }
 function renderHist() {
+  // 只列最近 5 份：第一项是“最新”（就是最近一份），后面是之前的 4 份
   const t = T(), sel = $('hist'), cur = sel.value;
-  sel.innerHTML = `<option value="">${t.latest}</option>` + INDEX.map(f => { const m = f.match(/^(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})-(\w+)\.json$/); return m ? `<option value="${f}">${+m[2]}/${+m[3]} ${m[4]}:${m[5]} ${t.modes[m[6]] || m[6]}</option>` : ''; }).join('');
-  sel.value = cur;
+  const lbl = f => { const m = f.match(/^(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})-(\w+)\.json$/); return m ? `${+m[2]}/${+m[3]} ${m[4]}:${m[5]} ${t.modes[m[6]] || m[6]}` : null; };
+  const files = INDEX.filter(lbl);
+  sel.innerHTML = `<option value="">${t.latest}${files[0] ? ' · ' + lbl(files[0]) : ''}</option>` + files.slice(1, 5).map(f => `<option value="${f}">${lbl(f)}</option>`).join('');
+  sel.value = files.slice(1, 5).includes(cur) ? cur : '';
 }
 
 // ------------------------------------------------------------------ data loading
