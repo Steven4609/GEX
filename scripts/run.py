@@ -128,10 +128,13 @@ OPT_RE = re.compile(r"^([A-Z]+?)(\d{6})([CP])(\d{8})$")
 def norm_cboe(t: str):
     j = cboe_get(f"options/{cboe_sym(t)}.json")
     d = j["data"]
+    base = t.replace(".", "").replace("-", "")
+    roots = {base, base + "W"} if t in {"SPX", "NDX", "RUT", "VIX", "XSP", "DJX"} else {base}
     opts = []
     for o in d.get("options", []):
         m = OPT_RE.match(o.get("option", ""))
-        if not m:
+        # 只收标准合约：代码根必须等于标的本身（指数另收周度 W 系列），和 Claude 版一致，排除调整后合约（如 B1SPY…、NVDA1…）
+        if not m or m.group(1) not in roots:
             continue
         opts.append({"option": "X" + m.group(2) + m.group(3) + m.group(4), "open_interest": o.get("open_interest") or 0, "iv": o.get("iv") or 0, "gamma": o.get("gamma") or 0})
     data = {k: d.get(k) for k in ("close", "current_price", "prev_day_close", "price_change_percent", "high", "low", "last_trade_time")}
