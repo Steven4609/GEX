@@ -20,7 +20,9 @@
   --bg:#0c0d12;--b1:#2a4fb0;--b2:#7a2a66;--b3:#0f6f5c;--b4:#7a4a12;
 }}
 *{box-sizing:border-box}
-html{background:var(--bg)}
+html{background:var(--bg);color-scheme:light dark}
+select.pill option{color:#16171b;background:#ffffff}
+@media (prefers-color-scheme:dark){select.pill option{color:#f2f3f7;background:#2a2c35}}
 body{margin:0;color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
 /* soft colour field behind the glass */
 .bgf{position:fixed;inset:0;z-index:-1;overflow:hidden;background:var(--bg)}
