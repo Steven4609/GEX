@@ -282,7 +282,7 @@ NAME_DROP = re.compile(r"\b(Common Stock|Class [A-C]( Common Stock| Ordinary Sha
 
 
 MAJOR = re.compile(r"Reuters|Bloomberg|CNBC|Wall Street Journal|WSJ|Financial Times|\bFT\b|Barron|MarketWatch|Investor's Business Daily|Associated Press|\bAP\b", re.I)
-NOISE = re.compile(r"^Prediction:|\bETFs? (Bought|Sold|Adds|Cuts)|\b(Sells|Buys|Bought|Sold) \$[\d.]+ (Million|Billion)|Should You Buy|Time to Buy|Buy (Now|Before)|Best .*Stocks? to|^Top \d+|\b\d+ Reasons|Stock Price in \w+|Millionaire|Is .* a Buy|Better .* Stock|Forget\b|(Adds|Trims|Increases|Reduces) (Stake|Position)|Shares? (Sold|Bought) by", re.I)
+NOISE = re.compile(r"^Prediction:|\bETFs? (Bought|Sold|Adds|Cuts)|\b(Sells|Buys|Bought|Sold) \$[\d.]+ (Million|Billion)|Should You Buy|Time to Buy|Buy (Now|Before)|Best .*Stocks? to|^Top \d+|\b\d+ Reasons|Stock Price in \w+|Millionaire|Is .* a Buy|Better .* Stock|Forget\b|(Adds|Trims|Increases|Reduces) (Stake|Position)|Shares? (Sold|Bought) by|Could Be Worth|\$[\d,]+ Investment in|Prove .* Wrong|Under Pressure\b.*\?$", re.I)
 
 
 def company_name(t):

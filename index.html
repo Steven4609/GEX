@@ -78,7 +78,7 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:28px;backgroun
 .sec{font-size:12px;font-weight:700;color:var(--mu);margin:22px 6px 10px;letter-spacing:.8px;text-transform:uppercase}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;align-items:start}
 .c{padding:16px 18px}
-.top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.px{font-size:24px;font-weight:700;letter-spacing:-.3px}.chg{font-size:13px;font-weight:600;margin-left:8px}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.px{font-size:24px;font-weight:700;letter-spacing:-.3px}.chg{font-size:13px;font-weight:600;margin-left:8px;white-space:nowrap}.top>div:first-child{min-width:0}
 .badge{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap;border:1px solid rgba(255,255,255,.35)}
 .sub{font-size:12px;color:var(--mu);margin:6px 0 8px;line-height:1.65}
 .walls{font-size:12px;margin:0 0 10px;line-height:1.65;color:var(--mu)}
@@ -406,7 +406,7 @@ function newsHtml(r) {
   h += '<div class="grid">';
   for (const a of list) {
     const n = wn[a.t]; if (!n) continue;
-    const mv = n.move || {};
+    const mv = {chg: a.chg, ah: (n.move || {}).ah}; // 当日涨跌用卡片同一来源，避免两处数字不一致
     const meta = [mv.chg != null ? `<span style="color:var(--${mv.chg >= 0 ? 'up' : 'dn'});font-weight:600">${esc(t.dayMv(mv.chg))}</span>` : '', mv.ah != null ? `<span style="color:var(--${mv.ah >= 0 ? 'up' : 'dn'})">${esc(t.ahMv(mv.ah))}</span>` : ''].filter(Boolean).join(' · ');
     const earn = [n.nextEarn ? esc(t.nextEarn(md(n.nextEarn))) : '', n.lastEarn && n.lastEarn.eps != null ? esc(t.lastEarn(n.lastEarn.date, n.lastEarn.eps, n.lastEarn.cons, n.lastEarn.surprise)) : ''].filter(Boolean).join('<br>');
     h += `<div class="c glass news"><div class="top"><div><span class="px" style="font-size:19px">${esc(a.t)}</span>${n.name ? `<span class="nm">${esc(n.name)}</span>` : ''}</div><div class="mv">${meta}</div></div>`;
