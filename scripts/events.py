@@ -65,7 +65,7 @@ ECON = [
     (1, r"^Unemployment Rate"), (1, r"^(Core )?PCE|PCE Price"), (1, r"^GDP|Gross Domestic Product|Prelim GDP|Advance GDP"),
     (1, r"Interest Rate Decision|Fed Interest Rate|Federal Funds Rate"), (1, r"FOMC (Meeting )?Minutes"), (1, r"FOMC Statement|FOMC Press Conference"),
     (2, r"^Initial Jobless Claims|^Unemployment Claims"), (2, r"^(Core )?Retail Sales"), (2, r"ISM (Manufacturing|Non-Manufacturing|Services) PMI$"),
-    (2, r"S&P Global .*PMI|Flash (Manufacturing|Services) PMI"), (2, r"^Housing Starts|^Building Permits"), (2, r"CB Consumer Confidence|^Consumer Confidence"),
+    (None, r"Composite PMI"), (2, r"S&P Global (Manufacturing|Services) PMI|Flash (Manufacturing|Services) PMI"), (2, r"^Housing Starts|^Building Permits"), (2, r"CB Consumer Confidence|^Consumer Confidence"),
     (2, r"Michigan Consumer Sentiment|UoM Consumer Sentiment|Prelim UoM"), (2, r"JOLTS"), (2, r"^(Core )?Durable Goods Orders"),
     (2, r"Average Hourly Earnings"), (2, r"ADP Nonfarm|ADP Non-Farm"), (2, r"Beige Book"), (2, r"Philadelphia Fed Manufacturing Index"),
     (2, r"New Home Sales|Existing Home Sales"), (2, r"Industrial Production"),
@@ -87,18 +87,62 @@ def clean(v):
     return v or None
 
 
-def econ_nasdaq(day):
-    j = get_json(f"https://api.nasdaq.com/api/calendar/economicevents?date={day}", headers=NASDAQ_H)
+def nasdaq_rows(qday):
+    j = get_json(f"https://api.nasdaq.com/api/calendar/economicevents?date={qday}", headers=NASDAQ_H)
+    return [r for r in (j.get("data") or {}).get("rows") or [] if r.get("country") == "United States"]
+
+
+_OFFSET = None
+
+
+def nasdaq_offset(ff):
+    """Nasdaq 经济日历的 date 参数实测会错一天（2026-11 查 D 返回 D-1 的事件）。
+    用 ForexFactory 的事件时间对照，判断该加 0 天还是 1 天；ForexFactory 取不到时默认加 1 天。"""
+    global _OFFSET
+    if _OFFSET is not None:
+        return _OFFSET
+    best, score = 1, -1
+    days = sorted({e["date"] for e in ff})
+    if days:
+        day = days[0]
+        ff_times = {e["time"] for e in ff if e["date"] == day}
+        for off in (0, 1):
+            q = (datetime.strptime(day, "%Y-%m-%d") + timedelta(days=off)).strftime("%Y-%m-%d")
+            try:
+                nt = {r.get("gmt") for r in nasdaq_rows(q)}
+            except Exception:
+                continue
+            sc = len(ff_times & nt) - len(nt - ff_times) * 0.1
+            if sc > score:
+                best, score = off, sc
+    _OFFSET = best
+    log(f"  Nasdaq 经济日历日期偏移：+{best} 天")
+    return best
+
+
+def econ_nasdaq(day, offset=1):
+    q = (datetime.strptime(day, "%Y-%m-%d") + timedelta(days=offset)).strftime("%Y-%m-%d")
     out = []
-    for r in (j.get("data") or {}).get("rows") or []:
-        if r.get("country") != "United States":
-            continue
+    for r in nasdaq_rows(q):
         name = (r.get("eventName") or "").strip()
         tr = tier(name)
         if tr is None:
             continue
         out.append({"kind": "fed" if FED.search(name) else "econ", "date": day, "time": r.get("gmt"), "name": name, "tier": tr,
                     "actual": clean(r.get("actual")), "consensus": clean(r.get("consensus")), "previous": clean(r.get("previous")), "src": "nasdaq"})
+    return out
+
+
+def ff_all():
+    out = []
+    for feed in ("thisweek", "nextweek"):
+        try:
+            for r in get_json(f"https://nfs.faireconomy.media/ff_calendar_{feed}.json"):
+                if r.get("country") == "USD":
+                    dt = datetime.fromisoformat(r["date"]).astimezone(ET)
+                    out.append({"date": dt.strftime("%Y-%m-%d"), "time": dt.strftime("%H:%M"), "name": r.get("title", "")})
+        except Exception as e:
+            log(f"  ForexFactory {feed}: {e}")
     return out
 
 
@@ -235,9 +279,14 @@ def collect(now, mode, session, horizon, watch):
     sources, notes = {}, []
 
     econ = []
+    try:
+        ff = [e for e in ff_all() if e["name"] not in ("Bank Holiday",)]
+    except Exception:
+        ff = []
+    off = nasdaq_offset([e for e in ff if e["date"] in days] or ff)
     for day in days:
         try:
-            econ += econ_nasdaq(day)
+            econ += econ_nasdaq(day, off)
             sources["econ"] = "Nasdaq"
         except Exception as e:
             log(f"  Nasdaq economic {day}: {e}")
