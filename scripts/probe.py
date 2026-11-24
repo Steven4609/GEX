@@ -11,6 +11,9 @@ URLS = [
     ("Nasdaq earnings", "https://api.nasdaq.com/api/calendar/earnings?date=2026-11-19", {"Origin": "https://www.nasdaq.com", "Referer": "https://www.nasdaq.com/"}),
     ("Nasdaq quote", "https://api.nasdaq.com/api/quote/NVDA/info?assetclass=stocks", {"Origin": "https://www.nasdaq.com", "Referer": "https://www.nasdaq.com/"}),
     ("ForexFactory", "https://nfs.faireconomy.media/ff_calendar_thisweek.json", {}),
+    ("Google News RSS", "https://news.google.com/rss/search?q=NVDA%20stock%20(site:cnbc.com%20OR%20site:bloomberg.com%20OR%20site:reuters.com)%20when:3d&hl=en-US&gl=US&ceid=US:en", {}),
+    ("Nasdaq news", "https://api.nasdaq.com/api/news/topic/articlebysymbol?q=NVDA|stocks&offset=0&limit=5", {"Origin": "https://www.nasdaq.com", "Referer": "https://www.nasdaq.com/"}),
+    ("CNBC RSS", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=15839069", {}),
     ("Yahoo RSS", "https://feeds.finance.yahoo.com/rss/2.0/headline?s=NVDA&region=US&lang=en-US", {}),
 ]
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36"
