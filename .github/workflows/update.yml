@@ -32,7 +32,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
+      # 取运行开始时 main 的最新版本（不是触发时的版本），避免排队的任务用旧数据
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-python@v5
         with:
@@ -47,26 +50,30 @@ jobs:
       - name: Install packages
         run: pip install -r requirements.txt
 
-      - name: Compute GEX brief
+      - name: Compute and save (retries if main moved meanwhile)
         env:
           GEX_SOURCE: ${{ inputs.source || 'cboe' }}
           TICKERS: ${{ inputs.tickers }}
-        run: |
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            python scripts/run.py --scheduled
-          else
-            python scripts/run.py --tickers "$TICKERS"
-          fi
-
-      - name: Save results to the repository
+          EVENT: ${{ github.event_name }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
-          git add -A data config
-          if git diff --cached --quiet; then
-            echo "没有新内容，不提交"
-          else
-            git commit -m "data: $(python -c "import json;d=json.load(open('data/latest.json'));print(d['generated'],d['mode'])" 2>/dev/null || echo update)"
-            git pull --rebase --quiet || true
-            git push
-          fi
+          for attempt in 1 2 3; do
+            git fetch -q origin main && git reset -q --hard origin/main
+            if [ "$EVENT" = "schedule" ]; then
+              python scripts/run.py --scheduled
+            else
+              python scripts/run.py --tickers "$TICKERS"
+            fi
+            git add -A data config
+            if git diff --cached --quiet; then
+              echo "没有新内容，不提交"; exit 0
+            fi
+            git commit -q -m "data: $(python -c "import json;d=json.load(open('data/latest.json'));print(d['generated'],d['mode'])" 2>/dev/null || echo update)"
+            if git push -q origin HEAD:main; then
+              echo "已保存（第 $attempt 次尝试）"; exit 0
+            fi
+            echo "推送时 main 已有新提交（可能同时有别的更新在跑），基于最新版本重新计算……"
+            sleep $((attempt * 5))
+          done
+          echo "三次都没能保存"; exit 1

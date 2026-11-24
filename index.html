@@ -478,7 +478,7 @@ async function gh(path, opt = {}) {
 async function update() {
   const t = T();
   if (!tok()) { st(`${esc(t.needTok)} <a href="${actionsUrl()}" target="_blank" rel="noopener" style="color:var(--ac)">${t.openActions}</a>`); $('setPanel').classList.remove('hide'); return; }
-  $('btnUpd').disabled = true;
+  $('btnUpd').disabled = true; $('btnUpd2').disabled = true;
   const t0 = Date.now(), since = new Date(t0 - 15000).toISOString();
   try {
     await gh(`/actions/workflows/${WORKFLOW}/dispatches`, {method: 'POST', body: JSON.stringify({ref: 'main', inputs: {tickers: $('watchIn').value.trim() || 'none'}})});
@@ -497,7 +497,7 @@ async function update() {
       break;
     }
   } catch (e) { st(esc(t.trigErr(e.message || e)), 'err'); }
-  $('btnUpd').disabled = false;
+  $('btnUpd').disabled = false; $('btnUpd2').disabled = false;
 }
 
 // ------------------------------------------------------------------ wiring
