@@ -5,77 +5,137 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>GEX 小报</title>
 <style>
-:root{--fg:#1a1a19;--mu:#6b6a65;--bd:rgba(0,0,0,.12);--bg:#f7f6f2;--cd:#fff;--tr:#eceae4;--up:#0f7a3d;--dn:#c0392b;--upb:#e5f4e4;--dnb:#fbebeb;--ac:#2f5d9e;--warn:#9a6700;--warnb:#fff6dd}
-@media (prefers-color-scheme:dark){:root{--fg:#ecebe7;--mu:#a3a29c;--bd:rgba(255,255,255,.14);--bg:#1c1c1b;--cd:#262624;--tr:#3a3a37;--up:#4cc27a;--dn:#ef6b5e;--upb:#1d3a26;--dnb:#43201d;--ac:#7fa8e0;--warn:#e3b341;--warnb:#3a3016}}
+:root{
+  --fg:#16171b;--mu:rgba(22,23,27,.58);--bd:rgba(22,23,27,.09);
+  --up:#0b8a43;--dn:#d23b2f;--upb:rgba(11,138,67,.13);--dnb:rgba(210,59,47,.12);--ac:#0a6cff;--warn:#8a5a00;--warnb:rgba(255,196,0,.18);
+  --glass:rgba(255,255,255,.52);--glass2:rgba(255,255,255,.34);--rim:rgba(255,255,255,.78);--rim2:rgba(255,255,255,.28);
+  --shadow:0 10px 40px -12px rgba(30,40,90,.25),0 2px 6px -2px rgba(30,40,90,.08);--tr:rgba(22,23,27,.08);
+  --bg:#eef0f6;--b1:#8ab6ff;--b2:#ffb3d1;--b3:#9ef0d6;--b4:#ffd49a;
+}
+@media (prefers-color-scheme:dark){:root{
+  --fg:#f2f3f7;--mu:rgba(242,243,247,.6);--bd:rgba(255,255,255,.09);
+  --up:#3fd67f;--dn:#ff6b5f;--upb:rgba(63,214,127,.16);--dnb:rgba(255,107,95,.16);--ac:#5aa2ff;--warn:#ffcf5c;--warnb:rgba(255,196,0,.14);
+  --glass:rgba(40,42,52,.48);--glass2:rgba(40,42,52,.3);--rim:rgba(255,255,255,.2);--rim2:rgba(255,255,255,.05);
+  --shadow:0 14px 44px -14px rgba(0,0,0,.6),0 2px 6px -2px rgba(0,0,0,.3);--tr:rgba(255,255,255,.1);
+  --bg:#0c0d12;--b1:#2a4fb0;--b2:#7a2a66;--b3:#0f6f5c;--b4:#7a4a12;
+}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
-.wrap{max-width:980px;margin:0 auto;padding:16px 16px 40px}
-.bar0{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:10px}
-.brand{font-size:15px;font-weight:600;letter-spacing:.2px}
+html{background:var(--bg)}
+body{margin:0;color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+/* soft colour field behind the glass */
+.bgf{position:fixed;inset:0;z-index:-1;overflow:hidden;background:var(--bg)}
+.bgf i{position:absolute;border-radius:50%;filter:blur(70px);opacity:.75}
+.bgf .b1{width:52vmax;height:52vmax;left:-14vmax;top:-18vmax;background:var(--b1)}
+.bgf .b2{width:40vmax;height:40vmax;right:-12vmax;top:8vmax;background:var(--b2);opacity:.55}
+.bgf .b3{width:46vmax;height:46vmax;left:18vmax;bottom:-24vmax;background:var(--b3);opacity:.55}
+.bgf .b4{width:30vmax;height:30vmax;right:6vmax;bottom:-6vmax;background:var(--b4);opacity:.45}
+/* liquid glass */
+.glass{position:relative;background:linear-gradient(135deg,var(--glass) 0%,var(--glass2) 100%);
+  -webkit-backdrop-filter:blur(26px) saturate(185%);backdrop-filter:blur(26px) saturate(185%);
+  border:1px solid var(--rim2);border-radius:24px;box-shadow:var(--shadow),inset 0 1px 0 var(--rim),inset 0 -1px 0 var(--rim2)}
+.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(160deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,0) 32%,rgba(255,255,255,0) 70%,rgba(255,255,255,.18) 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;padding:1px;opacity:.9}
+@media (prefers-color-scheme:dark){.glass::before{opacity:.35}}
+.wrap{max-width:1000px;margin:0 auto;padding:14px 14px 48px}
+.top0{position:sticky;top:10px;z-index:5;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px 10px 18px;border-radius:22px}
+.brand{font-size:16px;font-weight:700;letter-spacing:.2px;display:flex;align-items:center;gap:8px}
+.brand .dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,var(--ac),#9b5cff);box-shadow:0 0 10px var(--ac)}
 .tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 button,select,input{font:inherit;font-size:13px;color:var(--fg)}
-button{background:var(--cd);border:.5px solid var(--bd);border-radius:8px;padding:6px 11px;cursor:pointer}
-button:hover{border-color:var(--mu)}button.pri{background:var(--ac);border-color:var(--ac);color:#fff}button:disabled{opacity:.55;cursor:default}
-select,input{background:var(--cd);border:.5px solid var(--bd);border-radius:8px;padding:6px 8px}
-.panel{background:var(--cd);border:.5px solid var(--bd);border-radius:12px;padding:12px 14px;margin:10px 0;font-size:13px;line-height:1.6}
+.pill{background:rgba(255,255,255,.35);border:1px solid var(--rim2);border-radius:999px;padding:7px 14px;cursor:pointer;
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:inset 0 1px 0 var(--rim);transition:transform .15s,background .15s}
+@media (prefers-color-scheme:dark){.pill{background:rgba(255,255,255,.08)}}
+.pill:hover{background:rgba(255,255,255,.55)}@media (prefers-color-scheme:dark){.pill:hover{background:rgba(255,255,255,.16)}}
+.pill:active{transform:scale(.96)}
+.pill.pri{background:linear-gradient(180deg,#3d8bff,#0a6cff);border-color:rgba(255,255,255,.35);color:#fff;font-weight:600;box-shadow:0 6px 18px -6px rgba(10,108,255,.7),inset 0 1px 0 rgba(255,255,255,.45)}
+.pill:disabled{opacity:.55;cursor:default}
+select.pill{appearance:none;-webkit-appearance:none;padding-right:28px;background-image:linear-gradient(45deg,transparent 50%,var(--mu) 50%),linear-gradient(135deg,var(--mu) 50%,transparent 50%);background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;background-size:5px 5px;background-repeat:no-repeat}
+/* segmented control */
+.seg{display:inline-flex;position:relative;padding:4px;border-radius:999px;margin:16px 0 4px;gap:0}
+.seg button{position:relative;z-index:1;border:0;background:none;padding:9px 22px;border-radius:999px;cursor:pointer;font-size:14px;font-weight:600;color:var(--mu);transition:color .2s}
+.seg button.on{color:var(--fg)}
+.seg .thumb{position:absolute;top:4px;bottom:4px;border-radius:999px;background:rgba(255,255,255,.85);box-shadow:0 4px 14px -4px rgba(30,40,90,.3),inset 0 1px 0 #fff;transition:left .28s cubic-bezier(.3,1.4,.5,1),width .28s cubic-bezier(.3,1.4,.5,1)}
+@media (prefers-color-scheme:dark){.seg .thumb{background:rgba(255,255,255,.16);box-shadow:0 4px 14px -4px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.25)}}
+.seg .cnt{font-size:11px;font-weight:600;margin-left:6px;padding:1px 7px;border-radius:999px;background:var(--tr)}
+.panel{padding:14px 18px;margin:12px 0;font-size:13px;line-height:1.6}
 .panel h4{margin:0 0 6px;font-size:14px;font-weight:600}
+.panel a{color:var(--ac)}
 .row2{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.row2 input[type=text],.row2 input[type=password]{flex:1;min-width:200px}
-.status{font-size:12px;color:var(--mu);min-height:18px;margin-top:6px}.status.err{color:var(--dn)}.status.ok{color:var(--up)}
-.warn{background:var(--warnb);color:var(--warn);border-radius:10px;padding:8px 12px;font-size:12.5px;margin:8px 0;line-height:1.6}
-.hd{font-size:12px;color:var(--mu);margin:8px 0 4px}h1{font-size:19px;font-weight:600;margin:0 0 8px;line-height:1.4}
-.ctx{font-size:13px;color:var(--mu);line-height:1.6;margin:0 0 12px}
-.sec{font-size:13px;font-weight:600;color:var(--mu);margin:18px 0 8px;letter-spacing:.3px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
-.c{background:var(--cd);border:.5px solid var(--bd);border-radius:12px;padding:14px 16px}
-.top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.px{font-size:20px;font-weight:600}.chg{font-size:13px;margin-left:6px}
-.badge{font-size:12px;padding:2px 9px;border-radius:6px;white-space:nowrap}.sub{font-size:12px;color:var(--mu);margin:4px 0 6px;line-height:1.6}
-.walls{font-size:12px;margin:0 0 10px;line-height:1.6;color:var(--mu)}
-.lvrow{border-top:.5px solid var(--bd);padding:9px 0 7px}.rt{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:14px}
-.lv{font-weight:600;white-space:nowrap}.tp{font-size:12px;color:var(--mu);text-align:right}.etf{font-size:12px;color:var(--mu);margin-top:2px}
-.pr{display:grid;grid-template-columns:72px 1fr 38px;align-items:center;gap:6px;font-size:12px;color:var(--mu);margin-top:5px}
-.bar{height:6px;background:var(--tr);border-radius:3px;overflow:hidden}.bar span{display:block;height:100%;border-radius:3px}.pr b{font-weight:600;color:var(--fg);text-align:right}
-.hit{font-size:12px;margin-top:5px}.aft{font-size:12px;color:var(--mu);margin-top:4px}
-.omit{font-size:12px;color:var(--mu);border-top:.5px solid var(--bd);padding-top:8px;margin-top:2px;line-height:1.6}
-.src{font-size:11px;color:var(--mu);margin-top:8px}
-.ev{font-size:13px;line-height:1.7}.ev li{margin:2px 0}.ev a{color:var(--ac);text-decoration:none}
-ul.notes{font-size:13px;margin:12px 0 0;padding-left:18px;line-height:1.7}
-.ft{font-size:11px;color:var(--mu);margin-top:14px;line-height:1.6}
-details{margin-top:8px}summary{cursor:pointer;font-size:12px;color:var(--ac)}
-table{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px}th,td{padding:4px 6px;border-bottom:.5px solid var(--bd);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}th{color:var(--mu);font-weight:500}
+.field{flex:1;min-width:200px;background:rgba(255,255,255,.45);border:1px solid var(--rim2);border-radius:14px;padding:9px 14px;outline:none;box-shadow:inset 0 1px 2px rgba(0,0,0,.06)}
+@media (prefers-color-scheme:dark){.field{background:rgba(0,0,0,.25)}}
+.field:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(10,108,255,.18)}
+.status{font-size:12px;color:var(--mu);min-height:0;margin:6px 4px 0}.status:empty{display:none}.status.err{color:var(--dn)}.status.ok{color:var(--up)}
+.status a{color:var(--ac)}
+.warn{background:var(--warnb);color:var(--warn);border-radius:16px;padding:9px 14px;font-size:12.5px;margin:10px 0;line-height:1.6;border:1px solid rgba(255,196,0,.25)}
+.hero{padding:18px 22px;margin:12px 0 14px}
+.hd{font-size:12px;color:var(--mu);margin:0 0 4px;letter-spacing:.2px}h1{font-size:21px;font-weight:700;margin:0 0 8px;line-height:1.35;letter-spacing:-.2px}
+.ctx{font-size:13px;color:var(--mu);line-height:1.65;margin:0}
+.sec{font-size:12px;font-weight:700;color:var(--mu);margin:22px 6px 10px;letter-spacing:.8px;text-transform:uppercase}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;align-items:start}
+.c{padding:16px 18px}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.px{font-size:24px;font-weight:700;letter-spacing:-.3px}.chg{font-size:13px;font-weight:600;margin-left:8px}
+.badge{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap;border:1px solid rgba(255,255,255,.35)}
+.sub{font-size:12px;color:var(--mu);margin:6px 0 8px;line-height:1.65}
+.walls{font-size:12px;margin:0 0 10px;line-height:1.65;color:var(--mu)}
+.lvrow{margin:8px -6px 0;padding:10px 12px 9px;border-radius:16px;background:rgba(255,255,255,.28);border:1px solid var(--rim2)}
+@media (prefers-color-scheme:dark){.lvrow{background:rgba(255,255,255,.04)}}
+.rt{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:14.5px}
+.lv{font-weight:700;white-space:nowrap}.tp{font-size:12px;color:var(--mu);text-align:right}.etf{font-size:12px;color:var(--mu);margin-top:2px}
+.pr{display:grid;grid-template-columns:72px 1fr 40px;align-items:center;gap:8px;font-size:12px;color:var(--mu);margin-top:6px}
+.bar{height:7px;background:var(--tr);border-radius:999px;overflow:hidden;box-shadow:inset 0 1px 1px rgba(0,0,0,.06)}.bar span{display:block;height:100%;border-radius:999px;box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
+.pr b{font-weight:700;color:var(--fg);text-align:right;font-variant-numeric:tabular-nums}
+.hit{font-size:12px;margin-top:5px;font-weight:500}.aft{font-size:12px;color:var(--mu);margin-top:5px}
+.omit{font-size:12px;color:var(--mu);padding-top:10px;margin-top:4px;line-height:1.6}
+.src{font-size:11px;color:var(--mu);margin-top:8px;line-height:1.55}
+.ev{padding:14px 20px;font-size:13px;line-height:1.75}.ev li{margin:3px 0}.ev a{color:var(--ac);text-decoration:none}.ev a:hover{text-decoration:underline}
+.notes{padding:12px 20px}.notes ul{font-size:13px;margin:0;padding-left:18px;line-height:1.75}
+.ft{font-size:11px;color:var(--mu);margin:18px 8px 0;line-height:1.65}
+details{margin-top:10px}summary{cursor:pointer;font-size:12px;color:var(--ac);font-weight:500}
+table{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px;font-variant-numeric:tabular-nums}th,td{padding:5px 6px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}th{color:var(--mu);font-weight:500}
 .tblwrap{overflow-x:auto}
-.empty{color:var(--mu);font-size:13px;padding:30px 0;text-align:center}
-.hide{display:none}
+.empty{color:var(--mu);font-size:14px;padding:40px 20px;text-align:center;line-height:1.7}
+.hide{display:none!important}
+@media (max-width:560px){.top0{padding:9px 10px 9px 14px;top:6px}.seg{display:flex}.seg button{flex:1;padding:9px 10px}.hero{padding:16px 18px}.c{padding:14px 15px}.px{font-size:22px}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.glass{background:var(--bg)}}
 </style>
 </head>
 <body>
+<div class="bgf" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div>
 <div class="wrap">
-  <div class="bar0">
-    <div class="brand" id="brand">GEX 小报</div>
+  <div class="top0 glass">
+    <div class="brand"><span class="dot"></span><span id="brand">GEX 小报</span></div>
     <div class="tools">
-      <select id="hist" title=""></select>
-      <button id="btnUpd" class="pri"></button>
-      <button id="btnSet"></button>
-      <button id="btnLang">EN</button>
+      <select id="hist" class="pill" title=""></select>
+      <button id="btnUpd" class="pill pri"></button>
+      <button id="btnSet" class="pill"></button>
+      <button id="btnLang" class="pill">EN</button>
     </div>
   </div>
 
-  <div class="panel" id="watchPanel">
-    <div class="row2">
-      <label for="watchIn" id="watchLbl" style="font-weight:600"></label>
-      <input type="text" id="watchIn" spellcheck="false" autocomplete="off">
-    </div>
-    <div class="status" id="st"></div>
+  <div class="seg glass" role="tablist" id="seg">
+    <span class="thumb" id="thumb"></span>
+    <button role="tab" id="tabCore" data-tab="core">SPY / QQQ</button>
+    <button role="tab" id="tabWatch" data-tab="watch"><span id="tabWatchLbl">自选股</span><span class="cnt" id="watchCnt">0</span></button>
   </div>
+  <div class="status" id="st"></div>
 
-  <div class="panel hide" id="setPanel">
+  <div class="panel glass hide" id="setPanel">
     <h4 id="setTitle"></h4>
     <div id="setHelp"></div>
-    <div class="row2" style="margin-top:8px">
-      <input type="password" id="tokIn" autocomplete="off" spellcheck="false">
-      <button id="tokSave"></button><button id="tokDel"></button>
+    <div class="row2" style="margin-top:10px">
+      <input type="password" id="tokIn" class="field" autocomplete="off" spellcheck="false">
+      <button id="tokSave" class="pill"></button><button id="tokDel" class="pill"></button>
     </div>
     <div class="status" id="tokSt"></div>
+  </div>
+
+  <div class="panel glass hide" id="watchPanel">
+    <div class="row2">
+      <label for="watchIn" id="watchLbl" style="font-weight:600"></label>
+      <input type="text" id="watchIn" class="field" spellcheck="false" autocomplete="off">
+      <button id="btnUpd2" class="pill pri"></button>
+    </div>
   </div>
 
   <div id="main"><div class="empty" id="loading">…</div></div>
@@ -87,6 +147,7 @@ const $ = id => document.getElementById(id);
 const store = {get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }};
 let LANG = store.get('gex_lang') || 'zh';
 let REPORT = null, INDEX = [];
+let TAB = location.hash === '#watch' ? 'watch' : (store.get('gex_tab') || 'core');
 
 // repo: https://<owner>.github.io/<repo>/
 const OWNER = location.hostname.endsWith('.github.io') ? location.hostname.split('.')[0] : (store.get('gex_owner') || '');
@@ -112,7 +173,7 @@ const S = {
     hitPlain: (up, x, d) => `今日已${up ? '升穿' : '跌破'}过（日${up ? '高' : '低'} $${x}），现价在其${up ? '下' : '上'} $${d}`,
     omit: '未列入：', omitItem: (k, w, p, t) => `${k} ${w}（${p}，碰到 ${t}%）`, seeDetail: '，见详细数据',
     ctxVs: l => `较 ${l}：`, inRange: (p, lo, hi) => `，位于日内区间 ${p}% 处，离日低 ${lo}、离日高 ${hi}`,
-    core: 'SPY / QQQ', watch: '自选股', events: '事件', noEvents: '没有符合条件的事件',
+    core: 'SPY / QQQ', watch: '自选股', watchHead: n => n ? `自选股 · ${n} 只` : '自选股', watchEmpty: '还没有自选股。在上面的框里填代码（如 NVDA, TSLA），再点“更新”。', events: '事件', noEvents: '没有符合条件的事件',
     notes: '提示', srcLine: (s, ts) => `数据：${s}（${ts}）`, srcName: {cboe: 'CBOE 延迟行情', yahoo: 'Yahoo Finance（备用源，gamma 由 BS 重算）'},
     preQuote: (t, v, p) => `${t} 盘前报 $${v}（较昨收 ${p}）`, postQuote: (t, v, p) => `${t} 盘后报 $${v}（较收盘 ${p}）`,
     putAbove: (t, k, g, p) => `${t} 现价上方 ${k} 的 put 伽马（${g}，${p}）比 Put 墙更大，因在现价之上不计入 Put 墙`,
@@ -155,7 +216,7 @@ const S = {
     hitPlain: (up, x, d) => `Already ${up ? 'crossed above' : 'broke below'} today (day ${up ? 'high' : 'low'} $${x}); now $${d} ${up ? 'below' : 'above'} it`,
     omit: 'Not shown: ', omitItem: (k, w, p, t) => `${k} ${w} (${p}, touch ${t}%)`, seeDetail: '; see details',
     ctxVs: l => `vs ${l}: `, inRange: (p, lo, hi) => `, at ${p}% of today's range, ${lo} from the low, ${hi} from the high`,
-    core: 'SPY / QQQ', watch: 'Watchlist', events: 'Events', noEvents: 'No qualifying events',
+    core: 'SPY / QQQ', watch: 'Watchlist', watchHead: n => n ? `Watchlist · ${n} ticker${n > 1 ? 's' : ''}` : 'Watchlist', watchEmpty: 'No watchlist yet. Enter tickers above (e.g. NVDA, TSLA) and press Update.', events: 'Events', noEvents: 'No qualifying events',
     notes: 'Notes', srcLine: (s, ts) => `Data: ${s} (${ts})`, srcName: {cboe: 'CBOE delayed quotes', yahoo: 'Yahoo Finance (backup; gamma recomputed with Black-Scholes)'},
     preQuote: (t, v, p) => `${t} pre-market $${v} (${p} vs prior close)`, postQuote: (t, v, p) => `${t} after-hours $${v} (${p} vs close)`,
     putAbove: (t, k, g, p) => `${t}: put gamma at ${k} above spot (${g}, ${p}) exceeds the put wall but is not counted because it is above spot`,
@@ -247,7 +308,7 @@ function crossTxt(a) {
 }
 function card(a, r) {
   const t = T(), neg = a.regime === 'neg';
-  let h = `<div class="c"><div class="top"><div><span class="px">${a.t} $${f2(a.S)}</span>${a.chg != null ? `<span class="chg" style="color:var(--${a.chg >= 0 ? 'up' : 'dn'})">${sp(a.chg)}%</span>` : ''}</div><span class="badge" style="background:var(--${neg ? 'dnb' : 'upb'});color:var(--${neg ? 'dn' : 'up'})">${neg ? t.neg : t.pos}</span></div>`;
+  let h = `<div class="c glass"><div class="top"><div><span class="px">${a.t} $${f2(a.S)}</span>${a.chg != null ? `<span class="chg" style="color:var(--${a.chg >= 0 ? 'up' : 'dn'})">${sp(a.chg)}%</span>` : ''}</div><span class="badge" style="background:var(--${neg ? 'dnb' : 'upb'});color:var(--${neg ? 'dn' : 'up'})">${neg ? t.neg : t.pos}</span></div>`;
   const sub = [a.zero == null ? t.gapNone : t.gap(pct(a.zero / a.S - 1)), a.ma200 ? t.ma(f2(a.ma200), pct(a.ma200 / a.S - 1)) : '', t.em((a.sig * 100).toFixed(1) + '%'), r.mode !== 'pre' ? t.range(f2(a.lo), f2(a.hi)) : ''].filter(Boolean).join(' · ');
   h += `<div class="sub">${esc(sub)}${a.bull && a.pB != null ? `<br>${a.bull} $${f2(a.pB)} · ${a.bear} $${f2(a.pR)}` : ''}</div>`;
   h += `<div class="walls">${wallsHtml(a)}</div>`;
@@ -293,9 +354,9 @@ function eventsList(r) {
   if (cn.length) out.push(esc(t.calNote + cn.join(LANG === 'zh' ? '、' : ', ')));
   return out;
 }
-function notesList(r) {
+function notesList(r, list) {
   const t = T(), n = [];
-  for (const a of [...r.core, ...r.watch]) {
+  for (const a of list) {
     const isCore = r.core.includes(a);
     if (isCore && r.mode === 'pre' && a.cur && Math.abs(a.cur / a.close - 1) > 0.002) n.push(t.preQuote(a.t, f2(a.cur), pct(a.cur / a.close - 1)));
     if (isCore && r.mode === 'post' && a.cur && Math.abs(a.cur / a.close - 1) > 0.002) n.push(t.postQuote(a.t, f2(a.cur), pct(a.cur / a.close - 1)));
@@ -304,7 +365,7 @@ function notesList(r) {
     if (a.opex && a.totC && a.opex[1] / a.totC > 0.5) n.push(t.opexConc(a.t, expMD(a.opex[0]), fM(a.opex[1])));
   }
   const p = r.prev;
-  if (p) for (const a of r.core) { const q = p[a.t]; if (!q) continue; n.push(t.vsPrev(prevLabel(p), a.t, fM(q.net), fM(a.totC), q.zero ? '$' + q.zero.toFixed(0) : t.none, a.zero ? '$' + a.zero.toFixed(0) : t.none, q.regime !== a.regime)); }
+  if (p) for (const a of list) { const q = p[a.t]; if (!q) continue; n.push(t.vsPrev(prevLabel(p), a.t, fM(q.net), fM(a.totC), q.zero ? '$' + q.zero.toFixed(0) : t.none, a.zero ? '$' + a.zero.toFixed(0) : t.none, q.regime !== a.regime)); }
   return n;
 }
 function trackHtml(r) {
@@ -312,7 +373,7 @@ function trackHtml(r) {
   const p = x => x == null ? '—' : Math.round(x * 100) + '%';
   const keys = ['all', 'SPY', 'QQQ', 'zero', 'callWall', 'putWall', 'neg', 'pos', 'brokenPut', 'brokenCall', ...Object.keys(s).filter(k => !['all', 'SPY', 'QQQ', 'zero', 'callWall', 'putWall', 'neg', 'pos', 'brokenPut', 'brokenCall'].includes(k)).sort()];
   const name = k => k === 'all' ? t.trkAll : t.tags[k] || k;
-  let h = `<div class="sec">${t.trk}</div><div class="c"><div class="tblwrap"><table><thead><tr>${t.trkCols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+  let h = `<div class="sec">${t.trk}</div><div class="c glass"><div class="tblwrap"><table><thead><tr>${t.trkCols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>`;
   for (const k of keys) { const g = s[k]; if (!g) continue; h += `<tr><td>${esc(name(k))}</td><td>${g.n}</td><td>${p(g.hit)}</td><td>${p(g.pred)}</td><td>${p(g.beyond)}</td><td>${p(g.predBeyond)}</td></tr>`; }
   h += `</tbody></table></div><div class="src">${esc(t.trkNote(s.all.n))} <a href="data/tracking.csv" download style="color:var(--ac)">${t.trkDl}</a></div></div>`;
   return h;
@@ -321,12 +382,32 @@ function render() {
   const t = T(), r = REPORT;
   document.documentElement.lang = LANG === 'zh' ? 'zh-CN' : 'en';
   document.title = t.title; $('brand').textContent = t.title; $('btnUpd').textContent = t.upd; $('btnSet').textContent = t.set; $('btnLang').textContent = t.lang;
-  $('watchLbl').textContent = t.watchLbl; $('watchIn').placeholder = t.watchPh; $('hist').title = t.hist;
+  $('watchLbl').textContent = t.watchLbl; $('watchIn').placeholder = t.watchPh; $('hist').title = t.hist; $('btnUpd2').textContent = t.upd;
+  $('tabWatchLbl').textContent = t.watch; $('watchCnt').textContent = r ? (r.watch || []).length : 0;
+  for (const b of document.querySelectorAll('#seg button')) b.classList.toggle('on', b.dataset.tab === TAB);
+  $('watchPanel').classList.toggle('hide', TAB !== 'watch'); moveThumb();
   $('setTitle').textContent = t.setTitle; $('setHelp').innerHTML = t.setHelp(); $('tokIn').placeholder = t.tokPh; $('tokSave').textContent = t.save; $('tokDel').textContent = t.del;
   renderHist();
   if (!r) return;
-  const core = r.core, modeName = t.modes[r.mode];
+  const core = r.core, watch = r.watch || [], modeName = t.modes[r.mode];
   const time = r.generated.replace(/^\d{4}-(\d{2})-(\d{2}) /, (m0, a, b) => `${+a}/${+b} `);
+  const hdLine = `GEX ${modeName}${t.small} · ${esc(time)} → ${esc(hzName(r))}`;
+  const errs = (r.errors || []).filter(e => TAB === 'watch' ? !['SPY', 'QQQ'].includes(e.t) : ['SPY', 'QQQ'].includes(e.t));
+  const errHtml = errs.length ? `<div class="warn"><b>${t.errors}</b>${LANG === 'zh' ? '：' : ': '}${errs.map(e => `${esc(e.t)} — ${e.recovered ? t.recovered : t.failed} (${esc(e.error).slice(0, 160)})`).join('<br>')}</div>` : '';
+  const srcs = [...new Set([...core, ...watch].map(a => a.src))].map(s => t.srcName[s] || s).join(' / ');
+  const foot = `<div class="ft">${esc(t.foot)}<br>${esc(t.srcLine(srcs, core[0] ? core[0].ts : ''))} · ${esc(t.gen(r.generated, r.trigger))}</div>`;
+  let h = '';
+  if (TAB === 'watch') {
+    const names = (r.watchlist || []).join(', ');
+    h += `<div class="hero glass"><div class="hd">${hdLine}</div><h1>${esc(t.watchHead(watch.length))}</h1><div class="ctx">${esc(watch.length ? watch.map(a => `${a.t} ${a.regime === 'neg' ? t.neg : t.pos}`).join(LANG === 'zh' ? '，' : ', ') : t.watchEmpty)}</div></div>`;
+    h += errHtml;
+    if (watch.length) h += `<div class="grid">${watch.map(a => card(a, r)).join('')}</div>`;
+    const notes = notesList(r, watch);
+    if (notes.length) h += `<div class="sec">${t.notes}</div><div class="notes glass"><ul>${notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul></div>`;
+    h += foot;
+    $('main').innerHTML = h;
+    return;
+  }
   let head;
   if (core.length && core.every(a => a.regime === 'neg')) head = t.headNeg;
   else if (core.length && core.every(a => a.regime === 'pos')) head = t.headPos;
@@ -338,21 +419,18 @@ function render() {
     if (r.mode !== 'pre' && a.hi > a.lo) s += t.inRange(Math.round((a.S - a.lo) / (a.hi - a.lo) * 100), pct(a.S / a.lo - 1), pct(a.S / a.hi - 1));
     return s;
   }).join(LANG === 'zh' ? '；' : '; ') + (LANG === 'zh' ? '。' : '.');
-  let h = `<div class="hd">GEX ${modeName}${t.small} · ${esc(time)} → ${esc(hzName(r))}</div><h1>${esc(head)}</h1><div class="ctx">${esc(ctx)}</div>`;
-  const errs = r.errors || [];
-  if (errs.length) h += `<div class="warn"><b>${t.errors}</b>${LANG === 'zh' ? '：' : ': '}${errs.map(e => `${esc(e.t)} — ${e.recovered ? t.recovered : t.failed} (${esc(e.error).slice(0, 160)})`).join('<br>')}</div>`;
+  h += `<div class="hero glass"><div class="hd">${hdLine}</div><h1>${esc(head)}</h1><div class="ctx">${esc(ctx)}</div></div>`;
+  h += errHtml;
   h += `<div class="grid">${core.map(a => card(a, r)).join('')}</div>`;
-  if (r.watch && r.watch.length) h += `<div class="sec">${t.watch}</div><div class="grid">${r.watch.map(a => card(a, r)).join('')}</div>`;
   const ev = eventsList(r);
-  h += `<div class="sec">${t.events}</div><div class="c ev">${ev.length ? '<ul style="margin:0;padding-left:18px">' + ev.map(x => `<li>${x}</li>`).join('') + '</ul>' : `<span style="color:var(--mu)">${t.noEvents}</span>`}`;
+  h += `<div class="sec">${t.events}</div><div class="ev glass">${ev.length ? '<ul style="margin:0;padding-left:18px">' + ev.map(x => `<li>${x}</li>`).join('') + '</ul>' : `<span style="color:var(--mu)">${t.noEvents}</span>`}`;
   if (r.events && r.events.sources) h += `<div class="src">${esc(t.evSrc(Object.entries(r.events.sources).filter(([k]) => !k.endsWith('_err')).map(([, v]) => v).filter((v, i, a) => a.indexOf(v) === i).join(', ')))}</div>`;
   if (r.eventsError) h += `<div class="src" style="color:var(--dn)">${esc(r.eventsError)}</div>`;
   h += '</div>';
-  const notes = notesList(r);
-  if (notes.length) h += `<ul class="notes">${notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul>`;
+  const notes = notesList(r, core);
+  if (notes.length) h += `<div class="sec">${t.notes}</div><div class="notes glass"><ul>${notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul></div>`;
   h += trackHtml(r);
-  const srcs = [...new Set([...core, ...r.watch].map(a => a.src))].map(s => t.srcName[s] || s).join(' / ');
-  h += `<div class="ft">${esc(t.foot)}<br>${esc(t.srcLine(srcs, core[0] ? core[0].ts : ''))} · ${esc(t.gen(r.generated, r.trigger))}</div>`;
+  h += foot;
   $('main').innerHTML = h;
 }
 function renderHist() {
@@ -421,6 +499,10 @@ async function update() {
 $('btnLang').onclick = () => { LANG = LANG === 'zh' ? 'en' : 'zh'; store.set('gex_lang', LANG); render(); };
 $('btnSet').onclick = () => $('setPanel').classList.toggle('hide');
 $('btnUpd').onclick = update;
+$('btnUpd2').onclick = update;
+function moveThumb() { const on = document.querySelector('#seg button.on') || $('tabCore'); const th = $('thumb'); th.style.left = on.offsetLeft + 'px'; th.style.width = on.offsetWidth + 'px'; }
+for (const b of document.querySelectorAll('#seg button')) b.onclick = () => { TAB = b.dataset.tab; store.set('gex_tab', TAB); history.replaceState(null, '', TAB === 'watch' ? '#watch' : '#'); render(); window.scrollTo({top: 0, behavior: 'smooth'}); };
+window.addEventListener('resize', moveThumb);
 $('watchIn').addEventListener('keydown', e => { if (e.key === 'Enter') update(); });
 $('hist').onchange = () => load($('hist').value, false);
 $('tokSave').onclick = async () => {
