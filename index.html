@@ -106,6 +106,25 @@ table{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px;font-var
 .empty{color:var(--mu);font-size:14px;padding:40px 20px;text-align:center;line-height:1.7}
 .hide{display:none!important}
 @media (max-width:560px){.top0{padding:9px 10px 9px 14px;top:6px}.seg{display:flex}.seg button{flex:1;padding:9px 10px}.hero{padding:16px 18px}.c{padding:14px 15px}.px{font-size:22px}}
+/* image export: solid glass, no backdrop filter (screenshot renderers cannot draw it) */
+.exph{position:fixed;left:0;top:0;width:0;height:0;overflow:hidden;z-index:-5}
+.exp{width:760px;padding:22px 20px 18px;color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  background:radial-gradient(70% 45% at 0% 0%,color-mix(in srgb,var(--b1) 70%,transparent),transparent 70%),radial-gradient(55% 35% at 100% 18%,color-mix(in srgb,var(--b2) 50%,transparent),transparent 70%),radial-gradient(70% 40% at 35% 100%,color-mix(in srgb,var(--b3) 50%,transparent),transparent 70%),radial-gradient(40% 30% at 95% 95%,color-mix(in srgb,var(--b4) 45%,transparent),transparent 70%),var(--bg)}
+.exp .glass{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(255,255,255,.72)}
+@media (prefers-color-scheme:dark){.exp .glass{background:rgba(36,38,48,.82)}}
+.exp .glass::before{display:none}
+.exp details,.exp .hide{display:none!important}
+.exp .grid{grid-template-columns:repeat(2,1fr)}
+.exp a{text-decoration:none;color:inherit}
+.exp .ehd{display:flex;justify-content:space-between;align-items:center;margin:0 4px 12px;font-size:15px;font-weight:700}
+.exp .ehd span{font-size:12px;font-weight:500;color:var(--mu)}
+.exp .eft{margin:14px 4px 0;font-size:11px;color:var(--mu);display:flex;justify-content:space-between;gap:10px}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.mbox{width:min(560px,100%);max-height:92vh;display:flex;flex-direction:column;padding:14px 16px 16px}
+.mtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.mtop .pill{padding:4px 10px}
+.mtip{font-size:12px;color:var(--mu);margin-bottom:8px}
+.mimg{overflow:auto;border-radius:14px;border:1px solid var(--rim2);background:var(--bg);min-height:120px;display:flex;align-items:flex-start;justify-content:center}
+.mimg img{width:100%;display:block}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.glass{background:var(--bg)}}
 </style>
 </head>
@@ -117,6 +136,7 @@ table{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px;font-var
     <div class="tools">
       <select id="hist" class="pill" title=""></select>
       <button id="btnUpd" class="pill pri"></button>
+      <button id="btnImg" class="pill"></button>
       <button id="btnSet" class="pill"></button>
       <button id="btnLang" class="pill">EN</button>
     </div>
@@ -149,6 +169,16 @@ table{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px;font-var
 
   <div id="main"><div class="empty" id="loading">…</div></div>
 </div>
+<div class="modal hide" id="imgModal" role="dialog" aria-modal="true">
+  <div class="mbox glass">
+    <div class="mtop"><b id="imgTitle"></b><button class="pill" id="imgClose">✕</button></div>
+    <div class="mtip" id="imgTip"></div>
+    <div class="mimg"><img id="imgOut" alt=""></div>
+    <div class="row2" style="justify-content:flex-end;margin-top:10px">
+      <button class="pill" id="imgCopy"></button><button class="pill" id="imgShare"></button><button class="pill pri" id="imgSave"></button>
+    </div>
+  </div>
+</div>
 
 <script>
 'use strict';
@@ -166,7 +196,7 @@ const WORKFLOW = 'update.yml';
 // ------------------------------------------------------------------ strings
 const S = {
   zh: {
-    title: 'GEX 小报', upd: '更新', busy: s => `更新中 ${s}`, set: '设置', lang: 'EN', watchLbl: '自选股', watchPh: '例如 NVDA, TSLA, AAPL（逗号分隔，最多 12 个）；改完按“更新”',
+    title: 'GEX 小报', img: '生成图片', imgTitle: '报告图片', imgTip: '手机上可长按图片保存或转发；也可以用下面的按钮。', imgSave: '保存图片', imgCopy: '复制', imgShare: '分享', imgCopied: '已复制', imgMaking: '正在生成图片…', imgErr: e => `生成图片失败：${e}`, imgFoot: '不构成投资建议', tabName: {core: 'SPY / QQQ', watch: '自选股'}, upd: '更新', busy: s => `更新中 ${s}`, set: '设置', lang: 'EN', watchLbl: '自选股', watchPh: '例如 NVDA, TSLA, AAPL（逗号分隔，最多 12 个）；改完按“更新”',
     hist: '历史报告', latest: '最新',
     modes: {pre: '盘前', mid: '盘中', post: '盘后'}, small: '小结', today: '今日收盘', close: '收盘',
     wd: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
@@ -199,7 +229,7 @@ const S = {
     econ: (n, a, c, p) => `${n}${a ? `：${a}` : ''}${a && c ? `（预期 ${c}${p ? '，前值 ' + p : ''}）` : !a && c ? `（预期 ${c}${p ? '，前值 ' + p : ''}）` : ''}`,
     earn: (t, w, eps, f, s) => `${t} ${w === 'pre' ? '盘前' : w === 'after' ? '盘后' : ''}公布财报${eps ? `：EPS ${eps}（预期 ${f || '—'}${s ? '，超预期 ' + s + '%' : ''}）` : f ? `（EPS 预期 ${f}）` : ''}`,
     news: (t, c, a) => `${t} ${c != null ? '今日 ' + sp(c) + '%' : ''}${a != null ? '，盘后 ' + sp(a) + '%' : ''}`, noHead: '（没找到 30 小时内的新闻标题）',
-    evSrc: s => `事件来源：${s}。只收美国重要经济数据、联储讲话、大型科技股和自选股财报，以及涨跌超过 3% 的股票的最新英文标题；没有 AI 判断，政策类新闻不收。`,
+    evSrc: s => `事件来源：${s}。只收美国重要经济数据、联储讲话、大型科技股和自选股财报，以及涨跌超过 3% 的股票的最新标题（中文为机器翻译）；没有 AI 判断，政策类新闻不收。`,
     errors: '取数问题', recovered: '已用备用源', failed: '未能计算',
     detail: '详细数据', dNet: '净伽马，全到期日（每 1% 波动）', d7: '7 天内到期', dNear: d => `最近到期 ${d}`, dZero: '零伽马位', dNeg: '最大负伽马行', dIV: '隐含波动率（年化）', dTo: '到目标收盘', dProf: '净伽马曲线（BS 重算）', dLvl: '价位', dRel: '相对现价', dN: '合约数',
     trk: '触发位跟踪（实际 vs 预测）', trkNote: n => `已评估 ${n} 行。碰到率持续高于预测平均值，才说明 GEX 价位有额外信息；样本少于 100 行时不要下结论。`, trkCols: ['分组', '行数', '实际碰到', '预测碰到', '实际收在外侧', '预测收在外侧'], trkAll: '全部', trkDl: '下载跟踪表 CSV',
@@ -214,7 +244,7 @@ const S = {
     noData: '还没有数据。第一次运行完成后这里会显示小报。', loadErr: e => `读取数据失败：${e}`,
   },
   en: {
-    title: 'GEX Brief', upd: 'Update', busy: s => `Updating ${s}`, set: 'Settings', lang: '中文', watchLbl: 'Watchlist', watchPh: 'e.g. NVDA, TSLA, AAPL (comma-separated, up to 12); press Update after editing',
+    title: 'GEX Brief', img: 'Image', imgTitle: 'Report image', imgTip: 'On a phone, long-press the image to save or share it; or use the buttons below.', imgSave: 'Save image', imgCopy: 'Copy', imgShare: 'Share', imgCopied: 'Copied', imgMaking: 'Generating image…', imgErr: e => `Could not generate the image: ${e}`, imgFoot: 'Not investment advice', tabName: {core: 'SPY / QQQ', watch: 'Watchlist'}, upd: 'Update', busy: s => `Updating ${s}`, set: 'Settings', lang: '中文', watchLbl: 'Watchlist', watchPh: 'e.g. NVDA, TSLA, AAPL (comma-separated, up to 12); press Update after editing',
     hist: 'Report history', latest: 'Latest',
     modes: {pre: 'Pre-market', mid: 'Intraday', post: 'After-close'}, small: ' brief', today: "today's close", close: 'close',
     wd: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
@@ -420,7 +450,7 @@ function newsHtml(r) {
 function render() {
   const t = T(), r = REPORT;
   document.documentElement.lang = LANG === 'zh' ? 'zh-CN' : 'en';
-  document.title = t.title; $('brand').textContent = t.title; updLabel(); $('btnSet').textContent = t.set; $('btnLang').textContent = t.lang;
+  document.title = t.title; $('brand').textContent = t.title; updLabel(); $('btnSet').textContent = t.set; $('btnImg').textContent = t.img; $('imgTitle').textContent = t.imgTitle; $('imgTip').textContent = t.imgTip; $('imgSave').textContent = t.imgSave; $('imgCopy').textContent = t.imgCopy; $('imgShare').textContent = t.imgShare; $('btnLang').textContent = t.lang;
   $('watchLbl').textContent = t.watchLbl; $('watchIn').placeholder = t.watchPh; $('hist').title = t.hist; 
   $('tabWatchLbl').textContent = t.watch; $('watchCnt').textContent = r ? (r.watch || []).length : 0;
   for (const b of document.querySelectorAll('#seg button')) b.classList.toggle('on', b.dataset.tab === TAB);
@@ -558,6 +588,38 @@ async function poll(t0) {
   } catch (e) { st(esc(T().trigErr(e.message || e)), 'err'); }
   setBusy(null);
 }
+
+// ------------------------------------------------------------------ export image
+let IMG = null;
+async function makeImage() {
+  const t = T(); if (!REPORT) return;
+  $('btnImg').disabled = true; const old = $('btnImg').textContent; $('btnImg').textContent = t.imgMaking;
+  const holder = document.createElement('div'); holder.className = 'exph';
+  const box = document.createElement('div'); box.className = 'exp'; holder.appendChild(box);
+  const time = REPORT.generated.replace(/^\d{4}-(\d{2})-(\d{2}) /, (m0, a, b) => `${+a}/${+b} `);
+  box.innerHTML = `<div class="ehd"><div class="brand"><span class="dot"></span>${esc(t.title)} · ${esc(t.tabName[TAB])}</div><span>${esc(time)}</span></div>` + $('main').innerHTML
+    + `<div class="eft"><span>${esc(location.host + location.pathname)}</span><span>${esc(t.imgFoot)}</span></div>`;
+  document.body.appendChild(holder);
+  try {
+    const ms = await import('./vendor/modern-screenshot.mjs');
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    const blob = await ms.domToBlob(box, {scale: 2, type: 'image/png'});
+    const name = `GEX-${REPORT.generated.slice(0, 16).replace(/[: ]/g, '-')}-${TAB}.png`;
+    IMG = {blob, name, file: new File([blob], name, {type: 'image/png'})};
+    $('imgOut').src = URL.createObjectURL(blob);
+    $('imgShare').classList.toggle('hide', !(navigator.canShare && navigator.canShare({files: [IMG.file]})));
+    $('imgCopy').classList.toggle('hide', !(navigator.clipboard && window.ClipboardItem));
+    $('imgCopy').textContent = t.imgCopy;
+    $('imgModal').classList.remove('hide');
+  } catch (e) { st(esc(t.imgErr(e.message || e)), 'err'); }
+  holder.remove(); $('btnImg').disabled = false; $('btnImg').textContent = old;
+}
+$('btnImg').onclick = makeImage;
+$('imgClose').onclick = () => $('imgModal').classList.add('hide');
+$('imgModal').onclick = e => { if (e.target === $('imgModal')) $('imgModal').classList.add('hide'); };
+$('imgSave').onclick = () => { if (!IMG) return; const a = document.createElement('a'); a.href = $('imgOut').src; a.download = IMG.name; document.body.appendChild(a); a.click(); a.remove(); };
+$('imgCopy').onclick = async () => { try { await navigator.clipboard.write([new ClipboardItem({'image/png': IMG.blob})]); $('imgCopy').textContent = T().imgCopied; } catch (e) { st(esc(T().imgErr(e.message || e)), 'err'); } };
+$('imgShare').onclick = async () => { try { await navigator.share({files: [IMG.file], title: T().title}); } catch (e) {} };
 
 // ------------------------------------------------------------------ wiring
 $('btnLang').onclick = () => { LANG = LANG === 'zh' ? 'en' : 'zh'; store.set('gex_lang', LANG); render(); };
