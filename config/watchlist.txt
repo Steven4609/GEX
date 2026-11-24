@@ -2,3 +2,4 @@
 SPCX
 TSLA
 AMZN
+GOOG
