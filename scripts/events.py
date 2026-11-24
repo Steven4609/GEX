@@ -301,7 +301,7 @@ def collect(now, mode, session, horizon, watch):
     # dedupe (Nasdaq lists m/m and y/y separately with the same name), keep tier order (today first within a tier), max 5, then sort by time
     seen, pick = set(), []
     for e in sorted(econ, key=lambda e: (e["tier"], e["date"], e["time"] or "")):
-        key = (e["date"], e["name"])
+        key = (e["date"], re.sub(r"\W+", " ", e["name"].lower()).strip())
         if key in seen:
             continue
         seen.add(key)
