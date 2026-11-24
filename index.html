@@ -492,6 +492,7 @@ async function update() {
       run = (j.workflow_runs || [])[0] || run;
       if (!run) { st(esc(t.trig)); continue; }
       if (run.status !== 'completed') { st(esc(t.running(sec))); continue; }
+      if (run.conclusion === 'cancelled') { run = null; continue; } // 被更新的一次请求取代（GitHub 只保留最新的排队任务），继续等那一次
       if (run.conclusion === 'success') { $('hist').value = ''; await load('', true); st(esc(t.done), 'ok'); }
       else st(t.fail(`<a href="${run.html_url}" target="_blank" rel="noopener" style="color:var(--ac)">${esc(run.conclusion)}</a>`), 'err');
       break;

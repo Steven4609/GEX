@@ -331,6 +331,40 @@ def track_new(state, results):
     return out
 
 
+def track_dedupe(rows):
+    """频繁手动更新会让同一标的在短时间内重复记很多行，把胜率统计拉偏。
+    规则：同一天、同一标的、同一时段类型（盘前 / 盘中 / 盘后）的报告，60 分钟内只保留最后一份的行。"""
+    def minute(seg):
+        m = re.search(r"(\d{1,2}):(\d{2})", seg)
+        return int(m.group(1)) * 60 + int(m.group(2)) if m else None
+    groups = {}
+    for i, r in enumerate(rows):
+        typ = r[1].split(" ")[0]
+        groups.setdefault((r[0], typ, r[2]), {}).setdefault(r[1], []).append(i)
+    drop = set()
+    for g in groups.values():
+        segs = sorted(g, key=lambda x: minute(x) if minute(x) is not None else -1)
+        keep_t = None
+        for seg in reversed(segs):  # newest first
+            t = minute(seg)
+            if keep_t is None or t is None or keep_t - t >= 60:
+                keep_t = t if t is not None else keep_t
+                if t is None and keep_t is not None and seg != segs[-1]:
+                    drop.update(g[seg]); continue
+                continue
+            drop.update(g[seg])
+    out, seen = [], {}
+    for i, r in enumerate(rows):  # 同一份报告重复写入的完全相同的行，只留最后一次
+        if i in drop:
+            continue
+        k = tuple(r[:6])
+        if k in seen:
+            out[seen[k]] = None
+        seen[k] = len(out)
+        out.append(r)
+    return [r for r in out if r is not None]
+
+
 def track_summary(rows):
     """Hit rate vs. predicted average, by type and regime-free; shown on the page."""
     groups = {}
@@ -429,7 +463,11 @@ def main():
     # tracking
     rows = track_read()
     filled = track_eval(rows, state, state["date"]) if dec["mode"] == "post" else 0
-    rows += track_new(state, res["results"])
+    new = track_new(state, res["results"])
+    # 同一分钟重复运行：先去掉同一报告标签的旧行
+    keys = {(r[0], r[1], r[2]) for r in new}
+    rows = [r for r in rows if (r[0], r[1], r[2]) not in keys] + new
+    rows = track_dedupe(rows)
     track_write(rows)
 
     report = {
