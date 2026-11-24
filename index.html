@@ -94,6 +94,11 @@ select.pill{appearance:none;-webkit-appearance:none;padding-right:28px;backgroun
 .src{font-size:11px;color:var(--mu);margin-top:8px;line-height:1.55}
 .ev{padding:14px 20px;font-size:13px;line-height:1.75}.ev li{margin:3px 0}.ev a{color:var(--ac);text-decoration:none}.ev a:hover{text-decoration:underline}
 .notes{padding:12px 20px}.notes ul{font-size:13px;margin:0;padding-left:18px;line-height:1.75}
+.news .nm{font-size:12px;color:var(--mu);margin-left:8px}.news .mv{font-size:12px;white-space:nowrap}
+.nw{display:block;text-decoration:none;color:inherit;margin:8px -6px 0;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.28);border:1px solid var(--rim2);transition:background .15s}
+.nw:hover{background:rgba(255,255,255,.5)}@media (prefers-color-scheme:dark){.nw{background:rgba(255,255,255,.04)}.nw:hover{background:rgba(255,255,255,.1)}}
+.nt{font-size:13.5px;line-height:1.45;font-weight:500}.nmeta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:11.5px;color:var(--mu);margin-top:5px}
+.chip{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;color:var(--cc);background:color-mix(in srgb,var(--cc) 14%,transparent);border:1px solid color-mix(in srgb,var(--cc) 30%,transparent)}
 .ft{font-size:11px;color:var(--mu);margin:18px 8px 0;line-height:1.65}
 details{margin-top:10px}summary{cursor:pointer;font-size:12px;color:var(--ac);font-weight:500}
 table{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px;font-variant-numeric:tabular-nums}th,td{padding:5px 6px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}th{color:var(--mu);font-weight:500}
@@ -177,6 +182,11 @@ const S = {
     hitPlain: (up, x, d) => `今日已${up ? '升穿' : '跌破'}过（日${up ? '高' : '低'} $${x}），现价在其${up ? '下' : '上'} $${d}`,
     omit: '未列入：', omitItem: (k, w, p, t) => `${k} ${w}（${p}，碰到 ${t}%）`, seeDetail: '，见详细数据',
     ctxVs: l => `较 ${l}：`, inRange: (p, lo, hi) => `，位于日内区间 ${p}% 处，离日低 ${lo}、离日高 ${hi}`,
+    newsSec: '自选股要闻（近 3 天）', newsNone: '近 3 天主要财经媒体没有相关报道', newsPending: '下次更新时会抓取自选股新闻', dayMv: c => `今日 ${sp(c)}%`, ahMv: c => `盘后 ${sp(c)}%`,
+    nextEarn: d => `下次财报 ${d}`, lastEarn: (d, e, c, x) => `上次财报 ${d}：EPS ${e}（预期 ${c}${x != null && x !== '' ? '，' + (+x >= 0 ? '超预期 ' : '低于预期 ') + Math.abs(+x) + '%' : ''}）`,
+    tagN: {earnings: '业绩', analyst: '评级', deal: '并购/合作', legal: '监管/诉讼', people: '人事', policy: '政策', capital: '股本/回购', product: '产品'},
+    newsSrc: '标题来自 CNBC、Bloomberg、Reuters、WSJ、MarketWatch、Barron’s、FT、Yahoo Finance 等（经 Google News 和 Yahoo Finance RSS），只取标题和链接，原文请点开阅读。标签按标题关键词自动标注，有标签的优先列出，不代表重要性判断。',
+    watchFoot: '期权数据：CBOE 延迟行情。不构成投资建议。',
     core: 'SPY / QQQ', watch: '自选股', watchHead: n => n ? `自选股 · ${n} 只` : '自选股', watchEmpty: '还没有自选股。在上面的框里填代码（如 NVDA, TSLA），再点“更新”。', events: '事件', noEvents: '没有符合条件的事件',
     notes: '提示', srcLine: (s, ts) => `数据：${s}（${ts}）`, srcName: {cboe: 'CBOE 延迟行情', yahoo: 'Yahoo Finance（备用源，gamma 由 BS 重算）'},
     preQuote: (t, v, p) => `${t} 盘前报 $${v}（较昨收 ${p}）`, postQuote: (t, v, p) => `${t} 盘后报 $${v}（较收盘 ${p}）`,
@@ -220,6 +230,11 @@ const S = {
     hitPlain: (up, x, d) => `Already ${up ? 'crossed above' : 'broke below'} today (day ${up ? 'high' : 'low'} $${x}); now $${d} ${up ? 'below' : 'above'} it`,
     omit: 'Not shown: ', omitItem: (k, w, p, t) => `${k} ${w} (${p}, touch ${t}%)`, seeDetail: '; see details',
     ctxVs: l => `vs ${l}: `, inRange: (p, lo, hi) => `, at ${p}% of today's range, ${lo} from the low, ${hi} from the high`,
+    newsSec: 'Watchlist news (last 3 days)', newsNone: 'No coverage from major financial outlets in the last 3 days', newsPending: 'News will be fetched on the next update', dayMv: c => `${sp(c)}% today`, ahMv: c => `${sp(c)}% after hours`,
+    nextEarn: d => `Next earnings ${d}`, lastEarn: (d, e, c, x) => `Last earnings ${d}: EPS ${e} (est. ${c}${x != null && x !== '' ? ', ' + (+x >= 0 ? 'beat by ' : 'missed by ') + Math.abs(+x) + '%' : ''})`,
+    tagN: {earnings: 'Earnings', analyst: 'Analyst', deal: 'Deal', legal: 'Legal/Reg', people: 'People', policy: 'Policy', capital: 'Capital', product: 'Product'},
+    newsSrc: 'Headlines from CNBC, Bloomberg, Reuters, WSJ, MarketWatch, Barron’s, FT, Yahoo Finance and others (via Google News and Yahoo Finance RSS); titles and links only, open to read. Tags come from title keywords and tagged items are listed first; they are not a judgement of importance.',
+    watchFoot: 'Options data: CBOE delayed quotes. Not investment advice.',
     core: 'SPY / QQQ', watch: 'Watchlist', watchHead: n => n ? `Watchlist · ${n} ticker${n > 1 ? 's' : ''}` : 'Watchlist', watchEmpty: 'No watchlist yet. Enter tickers above (e.g. NVDA, TSLA) and press Update.', events: 'Events', noEvents: 'No qualifying events',
     notes: 'Notes', srcLine: (s, ts) => `Data: ${s} (${ts})`, srcName: {cboe: 'CBOE delayed quotes', yahoo: 'Yahoo Finance (backup; gamma recomputed with Black-Scholes)'},
     preQuote: (t, v, p) => `${t} pre-market $${v} (${p} vs prior close)`, postQuote: (t, v, p) => `${t} after-hours $${v} (${p} vs close)`,
@@ -382,6 +397,26 @@ function trackHtml(r) {
   h += `</tbody></table></div><div class="src">${esc(t.trkNote(s.all.n))} <a href="data/tracking.csv" download style="color:var(--ac)">${t.trkDl}</a></div></div>`;
   return h;
 }
+const TAGC = {earnings: '#0a6cff', analyst: '#8a4dff', deal: '#00a3a3', legal: '#d23b2f', people: '#c26a00', policy: '#b8326e', capital: '#2f8f3a', product: '#5a6b7d'};
+function newsHtml(r) {
+  const t = T(), wn = r.watchNews, list = r.watch || [];
+  if (!list.length) return '';
+  let h = `<div class="sec">${t.newsSec}</div>`;
+  if (!wn) return h + `<div class="notes glass" style="color:var(--mu)">${t.newsPending}</div>`;
+  h += '<div class="grid">';
+  for (const a of list) {
+    const n = wn[a.t]; if (!n) continue;
+    const mv = n.move || {};
+    const meta = [mv.chg != null ? `<span style="color:var(--${mv.chg >= 0 ? 'up' : 'dn'});font-weight:600">${esc(t.dayMv(mv.chg))}</span>` : '', mv.ah != null ? `<span style="color:var(--${mv.ah >= 0 ? 'up' : 'dn'})">${esc(t.ahMv(mv.ah))}</span>` : ''].filter(Boolean).join(' · ');
+    const earn = [n.nextEarn ? esc(t.nextEarn(md(n.nextEarn))) : '', n.lastEarn && n.lastEarn.eps != null ? esc(t.lastEarn(n.lastEarn.date, n.lastEarn.eps, n.lastEarn.cons, n.lastEarn.surprise)) : ''].filter(Boolean).join('<br>');
+    h += `<div class="c glass news"><div class="top"><div><span class="px" style="font-size:19px">${esc(a.t)}</span>${n.name ? `<span class="nm">${esc(n.name)}</span>` : ''}</div><div class="mv">${meta}</div></div>`;
+    if (earn) h += `<div class="sub">${earn}</div>`;
+    if (!n.items.length) h += `<div class="sub">${t.newsNone}</div>`;
+    for (const it of n.items) h += `<a class="nw" href="${esc(it.link)}" target="_blank" rel="noopener"><div class="nt">${esc(it.title)}</div><div class="nmeta">${(it.tags || []).map(g => `<span class="chip" style="--cc:${TAGC[g] || '#888'}">${esc(t.tagN[g] || g)}</span>`).join('')}<span>${esc(it.source || '')} · ${esc(it.pub)} ET</span></div></a>`;
+    h += '</div>';
+  }
+  return h + `</div><div class="src" style="margin:8px 8px 0">${esc(t.newsSrc)}</div>`;
+}
 function render() {
   const t = T(), r = REPORT;
   document.documentElement.lang = LANG === 'zh' ? 'zh-CN' : 'en';
@@ -406,9 +441,8 @@ function render() {
     h += `<div class="hero glass"><div class="hd">${hdLine}</div><h1>${esc(t.watchHead(watch.length))}</h1><div class="ctx">${esc(watch.length ? watch.map(a => `${a.t} ${a.regime === 'neg' ? t.neg : t.pos}`).join(LANG === 'zh' ? '，' : ', ') : t.watchEmpty)}</div></div>`;
     h += errHtml;
     if (watch.length) h += `<div class="grid">${watch.map(a => card(a, r)).join('')}</div>`;
-    const notes = notesList(r, watch);
-    if (notes.length) h += `<div class="sec">${t.notes}</div><div class="notes glass"><ul>${notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul></div>`;
-    h += foot;
+    h += newsHtml(r);
+    h += `<div class="ft">${esc(t.watchFoot)} · ${esc(t.gen(r.generated, r.trigger))}</div>`;
     $('main').innerHTML = h;
     return;
   }

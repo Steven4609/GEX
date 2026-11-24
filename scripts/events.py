@@ -265,6 +265,113 @@ def headline(t, since):
     return None
 
 
+# ---------------------------------------------------------------- watchlist news
+# 只从大型财经媒体取标题和链接（不取正文）：Google News 按网站过滤，加上 Yahoo Finance RSS。
+NEWS_SITES = ["cnbc.com", "bloomberg.com", "reuters.com", "wsj.com", "marketwatch.com", "barrons.com", "finance.yahoo.com", "ft.com", "investors.com"]
+TAGS = [
+    ("earnings", r"\bearnings\b|\bresults\b|quarter|\bEPS\b|revenue|guidance|outlook|forecast"),
+    ("analyst", r"upgrade|downgrade|price target|\brating\b|initiat|overweight|underweight|outperform"),
+    ("deal", r"acquir|acquisition|merger|\bdeal\b|buyout|takeover|\bstake\b|partnership"),
+    ("legal", r"lawsuit|\bsues?\b|\bsued\b|probe|investigat|\bSEC\b|\bDOJ\b|antitrust|\bfined?\b|settle|recall"),
+    ("people", r"\bCEO\b|\bCFO\b|resign|steps? down|appoint|layoffs?|job cuts|reinstat"),
+    ("policy", r"tariff|export|\bban\b|sanction|regulat|White House|Congress|Commerce Department"),
+    ("capital", r"buyback|repurchase|dividend|offering|stock split|share sale"),
+    ("product", r"launch|unveil|FDA|approv|new chip|new model"),
+]
+NAME_DROP = re.compile(r"\b(Common Stock|Class [A-C]( Common Stock| Ordinary Shares| Capital Stock)?|Ordinary Shares|American Depositary Shares|Capital Stock|Inc\.?|Incorporated|Corporation|Corp\.?|Company|Co\.?|Holdings?|Ltd\.?|plc|N\.V\.|S\.A\.|Group|Platforms)\b|,", re.I)
+
+
+def company_name(t):
+    try:
+        j = get_json(f"https://api.nasdaq.com/api/quote/{t}/info?assetclass=stocks", headers=NASDAQ_H)
+        n = ((j.get("data") or {}).get("companyName") or "").strip()
+        n = re.sub(r"\s+", " ", NAME_DROP.sub(" ", n)).strip(" .-")
+        return n or None
+    except Exception as e:
+        log(f"  Nasdaq 公司名 {t}: {e}")
+        return None
+
+
+def rss_items(url):
+    r = http().get(url, timeout=25)
+    if r.status_code != 200:
+        raise RuntimeError(f"HTTP {r.status_code}")
+    root = ET_XML.fromstring(r.content)
+    for it in root.iter("item"):
+        src = it.find("source")
+        yield {"title": (it.findtext("title") or "").strip(), "link": it.findtext("link"), "pub": it.findtext("pubDate"),
+               "source": src.text.strip() if src is not None and src.text else None}
+
+
+def tags_for(title):
+    return [k for k, pat in TAGS if re.search(pat, title, re.I)]
+
+
+def watch_news(watch, now, hours=72, per=6):
+    """每只自选股：公司名、涨跌、上次 / 下次财报、近 3 天大型财经媒体的标题（带关键词标签）。"""
+    from urllib.parse import quote_plus
+
+    out = {}
+    since = now.to_pydatetime() - timedelta(hours=hours)
+    mv = moves(watch) if watch else {}
+    for t in watch:
+        name = company_name(t)
+        key = (name or t).split(" ")[0]
+        rel = re.compile(r"\b(" + re.escape(t) + ("|" + re.escape(key) if key and len(key) > 2 else "") + r")\b", re.I)
+        items, seen = [], set()
+        q = f'("{t}"' + (f' OR "{name}"' if name else "") + ") (" + " OR ".join("site:" + s for s in NEWS_SITES) + f") when:{max(1, hours // 24)}d"
+        feeds = [("google", f"https://news.google.com/rss/search?q={quote_plus(q)}&hl=en-US&gl=US&ceid=US:en"),
+                 ("yahoo", f"https://feeds.finance.yahoo.com/rss/2.0/headline?s={t}&region=US&lang=en-US")]
+        for kind, url in feeds:
+            try:
+                for it in rss_items(url):
+                    try:
+                        pub = parsedate_to_datetime(it["pub"])
+                    except Exception:
+                        continue
+                    if pub < since:
+                        continue
+                    title, source = it["title"], it["source"] or "Yahoo Finance"
+                    if kind == "google" and source and title.endswith(" - " + source):
+                        title = title[: -len(source) - 3]
+                    if not rel.search(title):
+                        continue
+                    k = re.sub(r"\W+", " ", title.lower())[:70]
+                    if k in seen:
+                        continue
+                    seen.add(k)
+                    items.append({"title": title, "link": it["link"], "source": source, "ts": pub.timestamp(),
+                                  "pub": pub.astimezone(ET).strftime("%m/%d %H:%M"), "tags": tags_for(title)})
+            except Exception as e:
+                log(f"  {t} {kind} news: {e}")
+            time.sleep(0.3)
+        # newest first, but tagged (material) items get priority for the limited slots
+        items.sort(key=lambda x: -x["ts"])
+        tagged = [x for x in items if x["tags"]]
+        plain = [x for x in items if not x["tags"]]
+        pick = sorted((tagged + plain)[:per], key=lambda x: -x["ts"])
+        last = None
+        try:
+            j = get_json(f"https://api.nasdaq.com/api/company/{t}/earnings-surprise", headers=NASDAQ_H)
+            rows = ((j.get("data") or {}).get("earningsSurpriseTable") or {}).get("rows") or []
+            if rows:
+                r0 = rows[0]
+                last = {"date": r0.get("dateReported"), "eps": r0.get("eps"), "cons": r0.get("consensusForecast"), "surprise": r0.get("percentageSurprise")}
+        except Exception as e:
+            log(f"  {t} earnings-surprise: {e}")
+        nxt = None
+        try:
+            import yfinance as yf
+
+            ds = (yf.Ticker(t).calendar or {}).get("Earnings Date") or []
+            fut = sorted(str(d)[:10] for d in ds if str(d)[:10] >= now.strftime("%Y-%m-%d"))
+            nxt = fut[0] if fut else None
+        except Exception as e:
+            log(f"  {t} 下次财报日期: {e}")
+        out[t] = {"name": name, "move": mv.get(t), "lastEarn": last, "nextEarn": nxt, "items": pick, "found": len(items)}
+    return out
+
+
 # ---------------------------------------------------------------- main entry
 def collect(now, mode, session, horizon, watch):
     """Return {"items": [...], "sources": {...}, "notes": [...]}. Items are structured; the page writes the text."""

@@ -449,13 +449,18 @@ def main():
     state = res["state"]
     state["label_mode"] = dec["mode"]
 
-    events, ev_err = None, None
+    events, ev_err, watch_news = None, None, None
     if not args.no_events:
         try:
             sys.path.insert(0, str(ROOT / "scripts"))
             import events as evmod
 
             events = evmod.collect(now=now, mode=dec["mode"], session=dec["session"], horizon=dec["horizon"], watch=watch)
+            if watch:
+                try:
+                    watch_news = evmod.watch_news(watch, now)
+                except Exception as e:
+                    log("自选股新闻抓取失败：" + str(e))
         except Exception as e:
             ev_err = str(e)
             log("事件抓取失败：" + ev_err)
@@ -480,7 +485,7 @@ def main():
         "watch": [a for a in res["results"] if a["t"] not in ("SPY", "QQQ")],
         "watchlist": watch,
         "errors": fetch_errors + [{"t": e["t"], "error": e["error"], "recovered": False} for e in res["errors"]],
-        "events": events, "eventsError": ev_err,
+        "events": events, "eventsError": ev_err, "watchNews": watch_news,
         "prev": prev, "state": state,
         "tracking": {"filled": filled, "rows": len(rows), "summary": track_summary(rows)},
     }
