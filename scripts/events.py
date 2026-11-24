@@ -269,7 +269,7 @@ def headline(t, since):
 # 只从大型财经媒体取标题和链接（不取正文）：Google News 按网站过滤，加上 Yahoo Finance RSS。
 NEWS_SITES = ["cnbc.com", "bloomberg.com", "reuters.com", "wsj.com", "marketwatch.com", "barrons.com", "finance.yahoo.com", "ft.com", "investors.com"]
 TAGS = [
-    ("earnings", r"\bearnings\b|\bresults\b|quarter|\bEPS\b|revenue|guidance|outlook|forecast"),
+    ("earnings", r"\bearnings\b|\bresults\b|quarterly|\bEPS\b|revenue|guidance|(raises|lifts|cuts|lowers|boosts) (its |full-year |annual )?(outlook|forecast)"),
     ("analyst", r"upgrade|downgrade|price target|\brating\b|initiat|overweight|underweight|outperform"),
     ("deal", r"acquir|acquisition|merger|\bdeal\b|buyout|takeover|\bstake\b|partnership"),
     ("legal", r"lawsuit|\bsues?\b|\bsued\b|probe|investigat|\bSEC\b|\bDOJ\b|antitrust|\bfined?\b|settle|recall"),
@@ -279,6 +279,10 @@ TAGS = [
     ("product", r"launch|unveil|FDA|approv|new chip|new model"),
 ]
 NAME_DROP = re.compile(r"\b(Common Stock|Class [A-C]( Common Stock| Ordinary Shares| Capital Stock)?|Ordinary Shares|American Depositary Shares|Capital Stock|Inc\.?|Incorporated|Corporation|Corp\.?|Company|Co\.?|Holdings?|Ltd\.?|plc|N\.V\.|S\.A\.|Group|Platforms)\b|,", re.I)
+
+
+MAJOR = re.compile(r"Reuters|Bloomberg|CNBC|Wall Street Journal|WSJ|Financial Times|\bFT\b|Barron|MarketWatch|Investor's Business Daily|Associated Press|\bAP\b", re.I)
+NOISE = re.compile(r"^Prediction:|\bETFs? (Bought|Sold|Adds|Cuts)|\b(Sells|Buys|Bought|Sold) \$[\d.]+ (Million|Billion)|Should You Buy|Time to Buy|Buy (Now|Before)|Best .*Stocks? to|^Top \d+|\b\d+ Reasons|Stock Price in \w+|Millionaire|Is .* a Buy|Better .* Stock|Forget\b|(Adds|Trims|Increases|Reduces) (Stake|Position)|Shares? (Sold|Bought) by", re.I)
 
 
 def company_name(t):
@@ -345,11 +349,14 @@ def watch_news(watch, now, hours=72, per=6):
             except Exception as e:
                 log(f"  {t} {kind} news: {e}")
             time.sleep(0.3)
-        # newest first, but tagged (material) items get priority for the limited slots
-        items.sort(key=lambda x: -x["ts"])
-        tagged = [x for x in items if x["tags"]]
-        plain = [x for x in items if not x["tags"]]
-        pick = sorted((tagged + plain)[:per], key=lambda x: -x["ts"])
+        # 有限的名额优先给：有标签（可能是实质事件）的、来自大型媒体的；荐股、持仓变动类软文往后排。最后按时间倒序显示。
+        for x in items:
+            x["major"] = bool(MAJOR.search(x["source"] or ""))
+            x["score"] = 2 * bool(x["tags"]) + x["major"] - 3 * bool(NOISE.search(x["title"]))
+        items.sort(key=lambda x: (-x["score"], -x["ts"]))
+        pick = sorted(items[:per], key=lambda x: -x["ts"])
+        for x in pick:
+            x.pop("score", None)
         last = None
         try:
             j = get_json(f"https://api.nasdaq.com/api/company/{t}/earnings-surprise", headers=NASDAQ_H)
