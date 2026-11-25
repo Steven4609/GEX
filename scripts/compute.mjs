@@ -124,7 +124,7 @@ for (const T of input.tickers) {
   try { results.push(analyze(T)); } catch (e) { errors.push({t: T.t, error: String(e.message || e)}); }
 }
 // state: compact snapshot for next report's comparison and for the tracking table (same fields as the Claude task's state)
-const state = {date: today, mode: RUN.mode, horizon: RUN.horizon, time: `${String(E.H).padStart(2, '0')}:${String(E.M).padStart(2, '0')}`};
+const state = {date: sessDay, mode: RUN.mode, horizon: RUN.horizon, time: `${String(E.H).padStart(2, '0')}:${String(E.M).padStart(2, '0')}`};
 for (const a of results) state[a.t] = {S: a.S, net: Math.round(a.totC), zero: a.zero != null ? +a.zero.toFixed(1) : null, regime: a.regime,
   hi: RUN.mode === 'mid' ? a.hi : null, lo: RUN.mode === 'mid' ? a.lo : null, dayHi: a.hi, dayLo: a.lo, dayClose: a.close,
   callWall: a.callWall ? a.callWall.K : null, putWall: a.putWall ? a.putWall.K : null,

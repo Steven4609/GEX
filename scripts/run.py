@@ -46,15 +46,40 @@ def log(*a):
 
 
 # ---------------------------------------------------------------- calendar
+def post_done(session: str) -> bool:
+    """这个交易日的盘后报告是否已经生成（按报告里的 session 字段判断，延迟到次日凌晨生成的也算）。"""
+    for f in sorted(REPORTS.glob("*-post.json"), reverse=True)[:15]:
+        try:
+            if json.loads(f.read_text(encoding="utf-8")).get("session") == session:
+                return True
+        except Exception:
+            pass
+    return False
+
+
 def decide(now: pd.Timestamp, scheduled: bool):
     import exchange_calendars as xc
 
     cal = xc.get_calendar("XNYS")
     d = now.normalize().tz_localize(None)
     out = {"et_now": now.strftime("%Y-%m-%d %H:%M")}
-    if not cal.is_session(d):
-        if scheduled:
-            return {**out, "action": "skip", "reason": "休市"}
+    if scheduled:
+        # 定时任务：找最近一个已经收盘的交易日。收盘后 1 小时 45 分到 14 小时之间、且它的盘后报告还没生成时才做。
+        # GitHub 的定时任务常常延迟几个小时，甚至拖到第二天凌晨，这样延迟了也能补上当天的盘后报告。
+        last = cal.date_to_session(d, direction="previous")
+        if cal.session_close(last) > now:
+            last = cal.previous_session(last)
+        close = cal.session_close(last).tz_convert(ET)
+        since = (now - close).total_seconds() / 3600
+        out.update(mode="post", session=last.strftime("%Y-%m-%d"), horizon=cal.next_session(last).strftime("%Y-%m-%d"))
+        if since < 1.75:
+            return {**out, "action": "skip", "reason": f"还没到盘后时段（{now:%H:%M} ET，收盘后 {since:.1f} 小时）"}
+        if since > 14:
+            return {**out, "action": "skip", "reason": f"不在盘后时段（{now:%H:%M} ET，离上个交易日收盘已 {since:.0f} 小时）"}
+        if post_done(out["session"]):
+            return {**out, "action": "skip", "reason": f"{out['session']} 的盘后报告已生成"}
+        out["action"] = "run"
+    elif not cal.is_session(d):
         # manual run on a non-trading day: treat as after the last session's close
         last = cal.date_to_session(d, direction="previous")
         out.update(action="run", mode="post", horizon=cal.date_to_session(d, direction="next").strftime("%Y-%m-%d"), session=last.strftime("%Y-%m-%d"))
@@ -69,12 +94,6 @@ def decide(now: pd.Timestamp, scheduled: bool):
         else:
             mode, hz = "post", cal.next_session(d).strftime("%Y-%m-%d")
         out.update(action="run", mode=mode, horizon=hz, session=d.strftime("%Y-%m-%d"))
-        if scheduled:
-            if mode != "post" or h < 17.75:
-                return {**out, "action": "skip", "reason": f"还没到盘后时段（{now:%H:%M} ET）"}
-            done = list(REPORTS.glob(f"{d:%Y-%m-%d}-*-post.json"))
-            if done:
-                return {**out, "action": "skip", "reason": "今天的盘后报告已生成"}
     hzs = pd.Timestamp(out["horizon"])
     out["close"] = close.strftime("%H:%M")
     out["hz_len"] = int((cal.session_close(hzs) - cal.session_open(hzs)).total_seconds() // 60)
@@ -438,8 +457,13 @@ def main():
         except Exception:
             prev = None
 
+    # 盘后报告如果是在交易日之后才算的（定时任务拖到第二天凌晨、或周末 / 假日手动运行），
+    # 计算时把“当前时间”定在该交易日的 23:59，几率和期权剩余天数才和当晚算的一致
+    cnow = now
+    if dec["mode"] == "post" and dec["session"] != now.strftime("%Y-%m-%d"):
+        cnow = pd.Timestamp(dec["session"] + " 23:59", tz=ET)
     run = {"mode": dec["mode"], "horizon": dec["horizon"], "close": dec["close"], "hzLen": dec["hz_len"], "session": dec["session"],
-           "now": {"y": now.year, "m": now.month, "d": now.day, "H": now.hour, "M": now.minute}}
+           "now": {"y": cnow.year, "m": cnow.month, "d": cnow.day, "H": cnow.hour, "M": cnow.minute}}
     p = subprocess.run(["node", str(ROOT / "scripts" / "compute.mjs")], input=json.dumps({"run": run, "tickers": tickers}),
                        capture_output=True, text=True, timeout=600)
     if p.returncode != 0:
@@ -467,7 +491,7 @@ def main():
 
     # tracking
     rows = track_read()
-    filled = track_eval(rows, state, state["date"]) if dec["mode"] == "post" else 0
+    filled = track_eval(rows, state, dec["session"]) if dec["mode"] == "post" else 0
     new = track_new(state, res["results"])
     # 同一分钟重复运行：先去掉同一报告标签的旧行
     keys = {(r[0], r[1], r[2]) for r in new}
